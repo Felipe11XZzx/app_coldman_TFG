@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class Constants {
+  
   static const Color primaryColor = Colors.blue;
   static const Color successColor = Colors.green;
   static const Color errorColor = Colors.red;
   static const Color warningColor = Colors.orange;
   static const Color headerDrawer = Colors.blueGrey;
+  static const Color infoColor = Colors.blue;
 
   static const Icon adminBadge = Icon(
     Icons.verified,
@@ -40,4 +42,5 @@ class Constants {
   static const String errorGenerico = "Ha ocurrido un error";
   static const String confirmacionGuardar = "¿Desea guardar los cambios?";
   static const String confirmacionEliminar = "¿Está seguro de eliminar?";
+
 }

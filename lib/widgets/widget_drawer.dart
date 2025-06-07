@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CustomDrawer extends StatelessWidget {
+
   final VoidCallback onPantallaPrincipal;
   final VoidCallback? onMiPerfil;
   final VoidCallback onSalir;
@@ -42,4 +43,5 @@ class CustomDrawer extends StatelessWidget {
       ),
     );
   }
+  
 }

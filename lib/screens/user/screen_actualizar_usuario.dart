@@ -3,29 +3,23 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:provider/provider.dart';
-
-// IMPORTS DE LA APLICACION ANTERIOR DE VENTA DE PRODUCTOS DE CLIMATIZACION.
-
-/*
-import 'package:frontend_flutter/data/models/user.dart';
-import 'package:frontend_flutter/providers/usuarioprovider.dart';
-import 'dart:math';
-
-*/
-
-// IMPORTS DE LA APLICACION REFACTORIZADA DE COLDMAN S.A.
+import 'package:logger/logger.dart';
 import 'package:app_coldman_sa/data/models/empleado_model.dart';
 import 'package:app_coldman_sa/providers/empleado_provider.dart';
 
+
 class ScreenEditarUsuario extends StatefulWidget {
+
   final Empleado empleado;
   const ScreenEditarUsuario ({super.key, required this.empleado});
   @override
   State<ScreenEditarUsuario> createState() => _ScreenEditarUsuarioEstado();
+
 }
 
 class _ScreenEditarUsuarioEstado extends State<ScreenEditarUsuario> {
   
+  Logger logger = Logger();
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _userController;
   late TextEditingController _passwordController;
@@ -66,10 +60,9 @@ class _ScreenEditarUsuarioEstado extends State<ScreenEditarUsuario> {
       id: empleado.id,
       trato: _selectedTitle,
       nombre: empleado.nombre,
-      apellido: empleado.apellido,
+      apellidos: empleado.apellidos,
       email: empleado.email,
       telefono: empleado.telefono,
-      bloqueado: empleado.bloqueado,
       fechaAlta: empleado.fechaAlta,
       bajaLaboral: empleado.bajaLaboral,
       administrador: empleado.administrador,
@@ -77,7 +70,9 @@ class _ScreenEditarUsuarioEstado extends State<ScreenEditarUsuario> {
       contrasena2: _confirmPasswordController.text.isEmpty ? empleado.contrasena2 : _confirmPasswordController.text,           
       imagenUsuario: _image?.path ?? empleado.imagenUsuario,
       edad: _selectedAge, 
-      lugarNacimiento: birthplace
+      fechaNacimiento: empleado.fechaNacimiento,
+      lugarNacimiento: birthplace,
+      paisNacimiento: empleado.paisNacimiento
     );
     final empleadoProvider = Provider.of<EmpleadoProvider>(context, listen: false);
     empleadoProvider.updateEmpleado(empleado.id.toString(), updatedEmployee);
@@ -186,4 +181,5 @@ class _ScreenEditarUsuarioEstado extends State<ScreenEditarUsuario> {
       ],
     );
   }
+  
 }

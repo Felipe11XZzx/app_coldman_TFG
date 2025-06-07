@@ -1,4 +1,5 @@
 class Validations {
+
   static String? validateRequired(String? value) {
     return (value == null || value.isEmpty) ? "Campo obligatorio" : null;
   }
@@ -36,4 +37,5 @@ class Validations {
     if (stock < 0) return "No puede haber estock negativo";
     return null;
   }
+  
 }

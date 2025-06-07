@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-
 class CustomDialogs {
+
   static Future<void> showLoadingSpinner(BuildContext context) async {
     showDialog(
       context: context,
@@ -31,11 +31,11 @@ class CustomDialogs {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(confirmText),
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
               backgroundColor: Colors.blueAccent,
             ),
+            child: Text(confirmText),
           ),
         ],
       ),
@@ -52,4 +52,5 @@ class CustomDialogs {
       ),
     );
   }
+  
 }

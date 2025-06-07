@@ -1,25 +1,8 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
-// IMPORTS DE LA APLICACION ANTERIOR DE VENTA DE PRODUCTOS DE CLIMATIZACION.
-/*
-import 'package:inicio_sesion/screens/pantallagestionpedidos.dart';
-import 'package:inicio_sesion/screens/pantallagestionproductos.dart';
-import 'package:inicio_sesion/screens/pantallagestionusuarios.dart';
-import 'package:inicio_sesion/screens/pantallaperfil.dart';
-import 'package:inicio_sesion/screens/pantallaprincipal.dart';
+import 'package:app_coldman_sa/screens/admin/screen_asignar_servicio.dart';
 import 'package:app_coldman_sa/screens/admin/screen_gestion_clientes.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:numberpicker/numberpicker.dart';
-import 'package:app_coldman_sa/screens/user/screen_perfil.dart';
-import 'package:app_coldman_sa/screens/login/screen_inicio_sesion.dart'; // Pantalla principal de la app.
-import 'package:app_coldman_sa/utils/custom_snackbar.dart';
-import 'package:app_coldman_sa/utils/custom_button.dart';
-import 'package:app_coldman_sa/widgets/widget_drawer.dart';
-import 'package:app_coldman_sa/utils/constants.dart';
-import 'package:logger/logger.dart';
-*/
-
-// IMPORTS DE LA APLICACION REFACTORIZADA DE COLDMAN S.A.
+import 'package:app_coldman_sa/screens/admin/screen_gestion_informes.dart';
+import 'package:flutter/material.dart';
 import 'package:app_coldman_sa/data/models/empleado_model.dart';
 import 'package:app_coldman_sa/utils/custom_button.dart';
 import 'package:app_coldman_sa/screens/admin/screen_gestion_servicios.dart';
@@ -29,10 +12,9 @@ import 'package:app_coldman_sa/screens/login/screen_inicio_sesion.dart';
 import 'package:app_coldman_sa/widgets/widget_drawer.dart';
 
 
-
 class ScreenAdministrador extends StatefulWidget {
+  
   final Empleado empleadoAdministrador;
-
   const ScreenAdministrador({super.key, required this.empleadoAdministrador});
 
   @override
@@ -85,45 +67,87 @@ class _ScreenEstadoAdministrador extends State<ScreenAdministrador> {
           ),
         ),
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomAdminButton(
-                text: 'Gestión de Usuarios',
-                myFunction: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => ScreenGestionUsuarios(
-                              currentAdmin: widget.empleadoAdministrador,
-                            )),
-                  );
-                },
-                icon: Icons.supervised_user_circle,
-              ),
-              const SizedBox(height: 40),
-              CustomAdminButton(
-                text: 'Gestión de Productos',
-                myFunction: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ScreenServicios()),
-                  );
-                },
-                icon: Icons.shopping_bag,
-              ),
-              const SizedBox(height: 40),
-              CustomAdminButton(
-                text: 'Gestión de Pedidos',
-                myFunction: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ScreenServicios()),
-                  );
-                },
-                icon: Icons.shopping_cart,
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/logo_coldman.png',
+                  width: 300,
+                  height: 80,
+                  fit: BoxFit.contain,
+                ),
+
+                SizedBox(height: 140),
+
+                CustomAdminButton(
+                  text: 'Gestión Usuarios',
+                  myFunction: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ScreenGestionUsuarios(
+                                currentAdmin: widget.empleadoAdministrador,
+                              )),
+                    );
+                  },
+                  icon: Icons.group,
+                ),
+                const SizedBox(height: 20),
+
+                CustomAdminButton(
+                  text: 'Gestión Asignar Servicios',
+                  myFunction: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ScreenAsignarServicio()),
+                    );
+                  },
+                  icon: Icons.assignment,
+                ),
+                const SizedBox(height: 20),
+                CustomAdminButton(
+                  text: 'Gestión Clientes',
+                  myFunction: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ScreenGestionClientes(
+                                currentAdmin: widget.empleadoAdministrador,
+                              )),
+                    );
+                  },
+                  icon: Icons.people,
+                ),
+                const SizedBox(height: 20),
+
+                CustomAdminButton(
+                  text: 'Gestión Agenda Servicios',
+                  myFunction: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ScreenServicios()),
+                    );
+                  },
+                  icon: Icons.calendar_today,
+                ),
+                const SizedBox(height: 20),
+
+                CustomAdminButton(
+                  text: 'Gestión Informes Servicios',
+                  myFunction: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ScreenInformes()),
+                    );
+                  },
+                  icon: Icons.insert_chart_outlined,
+                ),
+              ],
+            ),
           ),
         ),
       ),

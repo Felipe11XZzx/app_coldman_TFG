@@ -1,32 +1,35 @@
+import 'package:app_coldman_sa/providers/cliente_provider.dart';
+import 'package:app_coldman_sa/web_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
-
-
-// IMPORTS DE LA APLICACION ANTERIOR DE VENTA DE PRODUCTOS DE CLIMATIZACION.
-
-/*
-import 'package:frontend_flutter/providers/pedidoprovider.dart';
-import 'package:frontend_flutter/providers/usuarioprovider.dart';
-import 'package:frontend_flutter/providers/productoprovider.dart';
-import 'package:provider/provider.dart';
-import 'screens/login/pantallaprincipal.dart';
-*/
-
-// IMPORTS DE LA APLICACION REFACTORIZADA DE COLDMAN S.A.
 import 'package:app_coldman_sa/providers/informe_provider.dart';
 import 'package:app_coldman_sa/providers/empleado_provider.dart';
 import 'package:app_coldman_sa/providers/servicio_provider.dart';
+import 'package:app_coldman_sa/providers/cita_provider.dart';
+import 'package:app_coldman_sa/providers/imagenes_provider.dart';
 import 'package:app_coldman_sa/screens/login/screen_inicio_sesion.dart';
 import 'package:provider/provider.dart';
-
+import 'package:flutter_localizations/flutter_localizations.dart'; 
 
 
 void main() {
+  if (kIsWeb) {
+    WebConfig.configurarParaWeb();
+  }
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
+          create: (context) => ImageUploadProvider(),
+        ),
+        ChangeNotifierProvider(
           create: (context) => EmpleadoProvider()..fetchEmpleados()
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ClienteProvider()..fetchClientes()
+        ),
+        ChangeNotifierProvider(
+          create: (context) => CitaProvider(),
         ),
         ChangeNotifierProvider(
           create: (context) => ServicioProvider()..fetchServices()
@@ -52,6 +55,14 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const ScreenInicioSesion(title: 'Pantalla principal'),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        Locale('es', 'ES'),
+      ],
     );
   }
 }

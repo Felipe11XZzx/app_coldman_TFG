@@ -5,10 +5,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 
 class ScreenContactoEmpresa extends StatefulWidget {
+
   const ScreenContactoEmpresa({super.key});
 
   @override
   _ScreenContactoEmpresaEstado createState() => _ScreenContactoEmpresaEstado();
+  
 }
 
 class _ScreenContactoEmpresaEstado extends State<ScreenContactoEmpresa> {
@@ -134,4 +136,5 @@ class _ScreenContactoEmpresaEstado extends State<ScreenContactoEmpresa> {
       trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
     );
   }
+
 }

@@ -2,19 +2,11 @@ import 'package:app_coldman_sa/data/models/empleado_model.dart';
 import 'package:app_coldman_sa/screens/user/screen_actualizar_usuario.dart';
 import 'package:app_coldman_sa/screens/user/screen_contacto.dart';
 import 'package:flutter/material.dart';
-// IMPORTS DE LA APLICACION ANTERIOR DE VENTA DE PRODUCTOS DE CLIMATIZACION.
-/*
-import 'package:frontend_flutter/utils/custombutton.dart';
-import 'package:frontend_flutter/screens/usuario/pantallacontacto.dart';
-import 'package:frontend_flutter/screens/usuario/pantallaeditarusuario.dart';
-import 'package:frontend_flutter/data/models/user.dart';
-*/
-
-// IMPORTS DE LA APLICACION ANTERIOR DE VENTA DE PRODUCTOS DE CLIMATIZACION.
 import 'package:app_coldman_sa/utils/custom_button.dart';
 
 
 class ScreenUsuarioActual extends StatefulWidget {
+
   final Empleado empleado;
   final Function(int) onTabChange;
 
@@ -26,6 +18,7 @@ class ScreenUsuarioActual extends StatefulWidget {
 
   @override
   State<ScreenUsuarioActual> createState() => _ScreenUsuarioActualEstado();
+  
 }
 
 class _ScreenUsuarioActualEstado extends State<ScreenUsuarioActual> {
@@ -95,4 +88,5 @@ class _ScreenUsuarioActualEstado extends State<ScreenUsuarioActual> {
       ),
     );
   }
+  
 }

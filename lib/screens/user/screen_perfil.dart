@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 
 
 class ScreenPerfil extends StatelessWidget {
+
   final Empleado usuarioActual;
   final logger = Logger();
 
@@ -13,21 +14,21 @@ class ScreenPerfil extends StatelessWidget {
 
   ImageProvider _getImageProvider() {
     try {
-      // Verificación más robusta de la imagen
-      if (usuarioActual.imagenUsuario == null || usuarioActual.imagenUsuario!.isEmpty) {
+      // VERIFICACION PARA LAS IMAGENES.
+      if (usuarioActual.imagenUsuario == null || usuarioActual.imagenUsuario.isEmpty) {
         return const AssetImage('assets/images/profile_default.jpg');
       }
 
       if (kIsWeb) {
-        // Validación más estricta para imágenes web
-        if (usuarioActual.imagenUsuario!.startsWith('http') ||
-            usuarioActual.imagenUsuario!.startsWith('blob:')) {
-          return NetworkImage(usuarioActual.imagenUsuario!);
+        // VALIDACION PARA LAS IMAGENES EN WEB.
+        if (usuarioActual.imagenUsuario.startsWith('http') ||
+            usuarioActual.imagenUsuario.startsWith('blob:')) {
+          return NetworkImage(usuarioActual.imagenUsuario);
         }
         return const AssetImage('assets/images/profile_default.jpg');
       } else {
-        // Verificar existencia del archivo antes de cargarlo
-        final imageFile = File(usuarioActual.imagenUsuario!);
+        // VERIFICAR SI EL ARCHIVO DE LA IMAGEN EXISTE ANTES DE ASIGNARLO.
+        final imageFile = File(usuarioActual.imagenUsuario);
         return imageFile.existsSync()
             ? FileImage(imageFile)
             : const AssetImage('assets/images/profile_default.jpg');
@@ -75,8 +76,8 @@ class ScreenPerfil extends StatelessWidget {
                         color: Colors.white),
                   ),
                   Text(
-                    usuarioActual.trato?.trim().isNotEmpty == true
-                        ? usuarioActual.trato!
+                    usuarioActual.trato.trim().isNotEmpty == true
+                        ? usuarioActual.trato
                         : 'Sr.',
                     style: const TextStyle(fontSize: 16, color: Colors.white70),
                   ),
@@ -109,27 +110,27 @@ class ScreenPerfil extends StatelessWidget {
                         _buildProfileTile(
                             Icons.location_on,
                             "Lugar de Nacimiento",
-                            usuarioActual.lugarNacimiento?.trim().isNotEmpty ==
+                            usuarioActual.lugarNacimiento.trim().isNotEmpty ==
                                     true
-                                ? usuarioActual.lugarNacimiento!
+                                ? usuarioActual.lugarNacimiento
                                 : "No especificado"),
                         _buildProfileTile(
-                            usuarioActual.administrador ?? false
+                            usuarioActual.administrador == false
                                 ? Icons.security
                                 : Icons.person_outline,
                             "Rol",
-                            usuarioActual.administrador ?? false
+                            usuarioActual.administrador == false
                                 ? "Administrador"
                                 : "Usuario"),
                         _buildProfileTile(
-                            usuarioActual.bloqueado ?? false
+                            usuarioActual.bajaLaboral ?? false
                                 ? Icons.block
                                 : Icons.check_circle,
                             "Estado",
-                            usuarioActual.bloqueado ?? false
+                            usuarioActual.bajaLaboral ?? false
                                 ? "Bloqueado"
                                 : "Activo",
-                            color: usuarioActual.bloqueado ?? false
+                            color: usuarioActual.bajaLaboral ?? false
                                 ? Colors.red
                                 : Colors.green),
                       ],
@@ -152,4 +153,5 @@ class ScreenPerfil extends StatelessWidget {
       subtitle: Text(value, style: TextStyle(fontSize: 16, color: color)),
     );
   }
+
 }

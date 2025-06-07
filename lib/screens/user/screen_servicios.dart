@@ -1,20 +1,12 @@
 import 'package:app_coldman_sa/data/models/empleado_model.dart';
 import 'package:flutter/material.dart';
-// IMPORTS DE LA APLICACION ANTERIOR DE VENTA DE PRODUCTOS DE CLIMATIZACION.
-/*
-import 'package:frontend_flutter/data/repositories/pedidorepository.dart';
-import 'package:frontend_flutter/widgets/orderlist.dart';
-import 'package:frontend_flutter/data/models/user.dart';
-import 'package:frontend_flutter/data/models/order.dart';
-*/
-
-// IMPORTS DE LA APLICACION ANTERIOR DE VENTA DE PRODUCTOS DE CLIMATIZACION.
 import 'package:app_coldman_sa/data/repositories/servicio_repository.dart';
 import 'package:app_coldman_sa/widgets/widget_services_list.dart';
 import 'package:app_coldman_sa/data/models/servicio_model.dart';
 
 
 class ScreenServiciosCliente extends StatefulWidget {
+
   const ScreenServiciosCliente({
     super.key,
     required this.empleado,
@@ -24,6 +16,7 @@ class ScreenServiciosCliente extends StatefulWidget {
 
   @override
   _ScreenServiciosClienteEstado createState () => _ScreenServiciosClienteEstado();
+  
 }
 
 class _ScreenServiciosClienteEstado extends State<ScreenServiciosCliente> {
@@ -32,7 +25,7 @@ class _ScreenServiciosClienteEstado extends State<ScreenServiciosCliente> {
   @override
   void initState() {
     super.initState();
-        futureServicio = ServicioRepository().getPedidosPorCliente(widget.empleado.id!);
+        futureServicio = ServicioRepository().getServiciosPorCliente(widget.empleado.id!);
   }
 
   @override
@@ -78,4 +71,5 @@ class _ScreenServiciosClienteEstado extends State<ScreenServiciosCliente> {
       },
     );
   }
+  
 }

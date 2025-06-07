@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:app_coldman_sa/utils/price_format.dart';
 
 class CustomService extends StatelessWidget {
+
   final Servicio servicio;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -23,19 +24,10 @@ class CustomService extends StatelessWidget {
         leading: SizedBox(
           width: 50,
           height: 50,
-          child: servicio.imagenServicio.startsWith('assets')
-              ? Image.asset(servicio.imagenServicio, fit: BoxFit.cover)
-              : Image.file(File(servicio.imagenServicio), fit: BoxFit.cover),
         ),
         title: Text(servicio.nombre),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-                "Precio: ${PriceFormat.formatPrice(servicio.precio)}"),
-            Text(servicio.descripcion,
-                style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -53,4 +45,5 @@ class CustomService extends StatelessWidget {
       ),
     );
   }
+  
 }

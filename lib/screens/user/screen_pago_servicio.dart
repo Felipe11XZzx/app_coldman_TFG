@@ -1,42 +1,18 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-// IMPORTS DE LA APLICACION ANTERIOR DE VENTA DE PRODUCTOS DE CLIMATIZACION.
-/*
-import 'package:frontend_flutter/utils/priceformat.dart';
-import 'package:frontend_flutter/data/models/orderdetail.dart';
-import 'package:frontend_flutter/data/models/user.dart';
-import 'package:frontend_flutter/data/models/product.dart';
-import 'package:frontend_flutter/utils/snacksbar.dart';
-import 'package:frontend_flutter/utils/constants.dart';
-import 'package:frontend_flutter/data/models/order.dart';
-import 'package:frontend_flutter/providers/pedidoprovider.dart';
-import 'package:frontend_flutter/providers/productoprovider.dart';
-import 'package:frontend_flutter/widgets/productlist.dart';
-*/
-
-// IMPORTS DE LA APLICACION REFACTORIZADA DE COLDMAN S.A.
-/*A CONTINUACION VOY A COMENTAR LOS IMPORTS QUE NO ESTOY USANDO
-
-import 'package:app_coldman_sa/utils/price_format.dart';
-import 'package:app_coldman_sa/data/models/informe_model.dart';
-import 'package:app_coldman_sa/data/models/empleado_model.dart';
-import 'package:app_coldman_sa/data/models/servicio_model.dart';
-import 'package:app_coldman_sa/data/models/cita_model.dart';
-import 'package:app_coldman_sa/utils/custom_snackbar.dart';
-import 'package:app_coldman_sa/utils/constants.dart';
-*/
 import 'package:app_coldman_sa/data/models/empleado_model.dart';
 import 'package:app_coldman_sa/providers/servicio_provider.dart';
 
 
 class ScreenPagoServicio extends StatefulWidget {
+  
   final Empleado empleado;
   const ScreenPagoServicio({super.key, required this.empleado});
 
   @override
   _ScreenEstadoPagoServicio createState() => _ScreenEstadoPagoServicio();
+
 }
 
 class _ScreenEstadoPagoServicio extends State<ScreenPagoServicio> {
@@ -53,9 +29,9 @@ class _ScreenEstadoPagoServicio extends State<ScreenPagoServicio> {
   double calcularTotal() {
     double total = 0;
     for (var servicio in servicioProvider.servicios) {
-      int cantidad = cantidades[servicio.id] ?? 0;
+      int cantidad = cantidades[servicio.idServicio] ?? 0;
       if (cantidad > 0) {
-        total += cantidad * servicio.precio;
+        total += cantidad;
       }  
     }
     return total;
@@ -63,7 +39,6 @@ class _ScreenEstadoPagoServicio extends State<ScreenPagoServicio> {
   
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     throw UnimplementedError();
   }
 
