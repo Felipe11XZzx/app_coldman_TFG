@@ -1,4 +1,7 @@
+// lib/screens/customer/screen_solicitar_cita.dart
 import 'package:app_coldman_sa/providers/cita_provider.dart';
+import 'package:app_coldman_sa/providers/servicio_cita_provider.dart';
+import 'package:app_coldman_sa/providers/servicio_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
@@ -6,11 +9,9 @@ import 'package:app_coldman_sa/data/models/cita_model.dart';
 import 'package:app_coldman_sa/data/models/cliente_model.dart';
 import 'package:app_coldman_sa/data/models/servicio_model.dart';
 
-
 class ScreenSolicitarCita extends StatefulWidget {
-
   final Cliente clienteLogueado;
-  
+
   const ScreenSolicitarCita({
     super.key,
     required this.clienteLogueado,
@@ -21,18 +22,18 @@ class ScreenSolicitarCita extends StatefulWidget {
 }
 
 class _ScreenSolicitarCitaState extends State<ScreenSolicitarCita> {
-
   Logger logger = Logger();
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _fechaController = TextEditingController();
   final TextEditingController _horaController = TextEditingController();
   final TextEditingController _comentariosController = TextEditingController();
-  final TextEditingController _duracionEstimadaController = TextEditingController();
+  final TextEditingController _duracionEstimadaController =
+      TextEditingController();
   final TextEditingController _direccionController = TextEditingController();
   final TextEditingController _tipoLugarController = TextEditingController();
-  
+  final EstadoCita _estadoCita = EstadoCita.programado;
+
   CategoriaServicio? _selectedCategoria;
-  EstadoCita _estadoCita = EstadoCita.programado;
   bool _isLoading = false;
   DateTime? _selectedDateTime;
 
@@ -84,20 +85,39 @@ class _ScreenSolicitarCitaState extends State<ScreenSolicitarCita> {
           _selectedDateTime?.hour ?? 0,
           _selectedDateTime?.minute ?? 0,
         );
-        
+
         final meses = [
-          '', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-          'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+          '',
+          'enero',
+          'febrero',
+          'marzo',
+          'abril',
+          'mayo',
+          'junio',
+          'julio',
+          'agosto',
+          'septiembre',
+          'octubre',
+          'noviembre',
+          'diciembre'
         ];
-        
+
         final dias = [
-          '', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'
+          '',
+          'lunes',
+          'martes',
+          'miércoles',
+          'jueves',
+          'viernes',
+          'sábado',
+          'domingo'
         ];
-        
+
         final diaSemana = dias[picked.weekday];
         final nombreMes = meses[picked.month];
-        
-        _fechaController.text = "$diaSemana, ${picked.day} de $nombreMes de ${picked.year}";
+
+        _fechaController.text =
+            "$diaSemana, ${picked.day} de $nombreMes de ${picked.year}";
       });
     }
   }
@@ -131,7 +151,8 @@ class _ScreenSolicitarCitaState extends State<ScreenSolicitarCita> {
           picked.hour,
           picked.minute,
         );
-        _horaController.text = "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+        _horaController.text =
+            "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -144,51 +165,90 @@ class _ScreenSolicitarCitaState extends State<ScreenSolicitarCita> {
       return;
     }
 
+    if (_selectedCategoria == null) {
+      _showErrorDialog('Por favor seleccione una categoría de servicio');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
       final citaProvider = Provider.of<CitaProvider>(context, listen: false);
-      
+
       logger.i('Cliente ID: ${widget.clienteLogueado.getId()}');
       logger.i('Fecha/Hora: $_selectedDateTime');
       logger.i('Duración: ${_duracionEstimadaController.text} horas');
-      logger.i('Estado: ${_estadoCita.backendValue}');
-      
+      logger.i('Categoría: ${_selectedCategoria!.displayName}');
+
+      String comentariosCompletos = _buildComentariosConCategoria();
+
       final nuevaCita = Cita(
         fechaHora: _selectedDateTime!,
         duracionEstimada: int.tryParse(_duracionEstimadaController.text) ?? 1,
-        comentariosAdicionales: _comentariosController.text,
+        comentariosAdicionales: comentariosCompletos,
         estadoCita: _estadoCita,
         idCliente: widget.clienteLogueado.getId(),
-        idEmpleado: 1, 
-        idServicio: 1,
+        idEmpleado: 1,
+        idServicio:
+            999, // ID FICTICIO PARA SINCRONIZARLO CON EL BACKEND.
       );
 
       logger.i('JSON a enviar: ${nuevaCita.toJson()}');
-
-      final jsonData = {
-        'fecha_hora': _selectedDateTime!.toIso8601String(),
-        'duracion_estimada': _duracionEstimadaController,
-        'comentarios_adicionales': _comentariosController.text,
-        'estado_cita': _estadoCita.backendValue,
-        'cliente': {
-          'id_cliente': widget.clienteLogueado.getId()
-        }
-      };
-      
       await citaProvider.citasRepository.agregarCita(nuevaCita);
-      
-      _showSuccessDialog();
+
+      final resultado = {
+        'cita': nuevaCita,
+        'servicio':
+            _crearServicioSimulado(), 
+      };
+
+      _showSuccessDialog(resultado);
       _clearForm();
     } catch (e) {
+      logger.e('Error al solicitar cita: $e');
       _showErrorDialog('Error al solicitar la cita: $e');
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  String _buildComentariosConCategoria() {
+    String comentarios = '';
+
+    comentarios += 'Categoría: ${_selectedCategoria!.displayName}\n';
+
+    if (_direccionController.text.isNotEmpty) {
+      comentarios += 'Dirección: ${_direccionController.text}\n';
+    }
+
+    if (_tipoLugarController.text.isNotEmpty) {
+      comentarios += 'Tipo de lugar: ${_tipoLugarController.text}\n';
+    }
+
+    if (_comentariosController.text.isNotEmpty) {
+      comentarios += 'Comentarios adicionales: ${_comentariosController.text}';
+    }
+
+    return comentarios.trim();
+  }
+
+  Servicio _crearServicioSimulado() {
+    return Servicio(
+      idServicio: 0, // ID temporal
+      nombre: 'Servicio ${_selectedCategoria!.displayName}',
+      descripcion: 'Servicio solicitado por el cliente',
+      categoriaServicio: _selectedCategoria!,
+      estadoServicio: EstadoServicio.programada,
+      fechaCreacion: DateTime.now(),
+      duracionReal: int.tryParse(_duracionEstimadaController.text) ?? 1,
+      fechaInicioServicio: _selectedDateTime,
+      fechaFinServicio: _selectedDateTime?.add(
+          Duration(hours: int.tryParse(_duracionEstimadaController.text) ?? 1)),
+    );
   }
 
   void _clearForm() {
@@ -203,7 +263,10 @@ class _ScreenSolicitarCitaState extends State<ScreenSolicitarCita> {
     _initializeClienteData();
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog(Map<String, dynamic> resultado) {
+    final cita = resultado['cita'];
+    final servicio = resultado['servicio'];
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -211,18 +274,175 @@ class _ScreenSolicitarCitaState extends State<ScreenSolicitarCita> {
           children: [
             Icon(Icons.check_circle, color: Colors.green),
             SizedBox(width: 8),
-            Text('¡Éxito!'),
+            Text('¡Cita Solicitada!'),
           ],
         ),
-        content: Text('La cita ha sido solicitada correctamente.\nUn administrador la revisará pronto.'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tu cita ha sido registrada exitosamente.'),
+            SizedBox(height: 16),
+            Text('Detalles:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('ID Cita: ${cita.id ?? "Pendiente de asignación"}'),
+            Text('ID Servicio: ${servicio.idServicio}'),
+            Text('Categoría: ${_selectedCategoria?.displayName ?? "Categoría seleccionada"}'),
+            Text('Fecha: ${_fechaController.text}'),
+            Text('Hora: ${_horaController.text}'),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          color: Colors.blue[700], size: 16),
+                      SizedBox(width: 4),
+                      Text('Próximos pasos:',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[700])),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Text('1. Un administrador revisará tu solicitud',
+                      style: TextStyle(fontSize: 12)),
+                  Text('2. Se te asignará un técnico especializado',
+                      style: TextStyle(fontSize: 12)),
+                  Text('3. Recibirás confirmación del servicio',
+                      style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('OK', style: TextStyle(color: Color(0xFF4285F4))),
+            child:
+                Text('Entendido', style: TextStyle(color: Color(0xFF4285F4))),
           ),
         ],
       ),
     );
+    Widget buildComentariosField() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dirección e Indicaciones Específicas',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+          SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Campo para dirección específica
+                TextFormField(
+                  controller: _comentariosController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    hintText: 'Ejemplo: Calle Mompeon Motos 6, 2º B, Zaragoza',
+                    hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    labelText: 'Dirección completa con piso/puerta',
+                    labelStyle: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                Divider(height: 1, color: Colors.grey[300]),
+                // Campo para indicaciones adicionales
+                TextFormField(
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText:
+                        'Indicaciones para llegar: "Segundo edificio a la derecha, portero automático, tocar el botón 2B"',
+                    hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    labelText: 'Indicaciones específicas de acceso',
+                    labelStyle: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 8),
+          // Ejemplos de indicaciones útiles
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue[200]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.lightbulb_outline,
+                        color: Colors.blue[700], size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'Ejemplos de indicaciones útiles:',
+                      style: TextStyle(
+                        color: Colors.blue[800],
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 6),
+                Text(
+                  '• Número de piso, puerta o local específico\n'
+                  '• Puntos de referencia (junto al banco, frente al parque)\n'
+                  '• Códigos de acceso o portero automático\n'
+                  '• Horarios de acceso restringido\n'
+                  '• Observaciones sobre parking o acceso',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   void _showErrorDialog(String message) {
@@ -401,244 +621,275 @@ class _ScreenSolicitarCitaState extends State<ScreenSolicitarCita> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFF5F5F5),
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(Icons.calendar_today, color: Color(0xFF4285F4)),
-            SizedBox(width: 8),
-            Text(
-              'Solicitar Cita',
-              style: TextStyle(
-                color: Color(0xFF4285F4),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.white,
-        elevation: 2,
-        iconTheme: IconThemeData(color: Color(0xFF4285F4)),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ESTILO CARD LOGO.
-              Center(
-                child: Container(
-                  margin: EdgeInsets.only(bottom: 32),
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
+    return Consumer<ServicioCitaProvider>(
+      builder: (context, servicioProvider, child) {
+        return Scaffold(
+          backgroundColor: Color(0xFFF5F5F5),
+          appBar: AppBar(
+            title: Row(
+              children: [
+                Icon(Icons.calendar_today, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  'Solicitar Cita',
+                  style: TextStyle(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 1,
-                        blurRadius: 5,
-                        offset: Offset(0, 2),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor:Color(0xFF3B82F6),
+            elevation: 2,
+            iconTheme: IconThemeData(color: Color(0xFF3B82F6)),
+          ),
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // LOGO
+                  Center(
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 32),
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/images/logo_coldman.png',
+                        width: 300,
+                        height: 80,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+
+                  // INFORMACIÓN DEL CLIENTE
+                  _buildInfoField(
+                    label: 'Cliente',
+                    value:
+                        '${widget.clienteLogueado.getNombre()} ${widget.clienteLogueado.getApellido()}',
+                    icon: Icons.person,
+                  ),
+
+                  // FECHA
+                  _buildInputField(
+                    label: 'Fecha *',
+                    controller: _fechaController,
+                    readOnly: true,
+                    onTap: _selectDate,
+                    suffixIcon:
+                        Icon(Icons.calendar_today, color: Color(0xFF4285F4)),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor seleccione una fecha';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  // HORA
+                  _buildInputField(
+                    label: 'Hora *',
+                    controller: _horaController,
+                    readOnly: true,
+                    onTap: _selectTime,
+                    suffixIcon:
+                        Icon(Icons.access_time, color: Color(0xFF4285F4)),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor seleccione una hora';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  // CATEGORÍA DE SERVICIO
+                  _buildDropdownField<CategoriaServicio>(
+                    label: 'Categoría de Servicio *',
+                    value: _selectedCategoria,
+                    items: CategoriaServicio.values,
+                    getDisplayName: (categoria) => categoria.displayName,
+                    onChanged: (categoria) {
+                      setState(() {
+                        _selectedCategoria = categoria;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Por favor seleccione una categoría';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  // DURACIÓN ESTIMADA
+                  _buildInputField(
+                    label: 'Duración Estimada (horas) *',
+                    controller: _duracionEstimadaController,
+                    keyboardType: TextInputType.number,
+                    suffixIcon:
+                        Icon(Icons.access_time, color: Color(0xFF4285F4)),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese la duración estimada';
+                      }
+                      final duracion = int.tryParse(value);
+                      if (duracion == null || duracion <= 0) {
+                        return 'Por favor ingrese un número entero mayor a 0';
+                      }
+                      if (duracion > 24) {
+                        return 'La duración no puede ser mayor a 24 horas';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  // DIRECCIÓN DEL SERVICIO
+                  _buildInputField(
+                    label: 'Dirección del Servicio *',
+                    controller: _direccionController,
+                    maxLines: 2,
+                    suffixIcon:
+                        Icon(Icons.location_on, color: Color(0xFF4285F4)),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese la dirección';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  // TIPO DE LUGAR
+                  _buildInputField(
+                    label: 'Tipo de Lugar *',
+                    controller: _tipoLugarController,
+                    suffixIcon: Icon(Icons.business, color: Color(0xFF4285F4)),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese el tipo de lugar';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  // COMENTARIOS ADICIONALES
+                  _buildInputField(
+                    label: 'Comentarios Adicionales',
+                    controller: _comentariosController,
+                    maxLines: 3,
+                    suffixIcon: Icon(Icons.comment, color: Color(0xFF4285F4)),
+                    validator: (value) => null,
+                  ),
+
+                  SizedBox(height: 32),
+
+                  // BOTONES
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[300],
+                            foregroundColor: Colors.black54,
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: Text(
+                            'Cancelar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: (_isLoading || servicioProvider.isLoading)
+                              ? null
+                              : _solicitarCita,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF4285F4),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: (_isLoading || servicioProvider.isLoading)
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  'Solicitar Cita',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
                       ),
                     ],
                   ),
-                  child: Image.asset(
-                    'assets/images/logo_coldman.png',
-                    width: 300,
-                    height: 80,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
 
-              // INFORMACION DEL CLIENTE.
-              _buildInfoField(
-                label: 'Cliente',
-                value: '${widget.clienteLogueado.getNombre()} ${widget.clienteLogueado.getApellido()}',
-                icon: Icons.person,
-              ),
-
-              // ESTADO DE LA CITA.
-              _buildInfoField(
-                label: 'Estado de la Cita',
-                value: _estadoCita.displayName,
-                icon: Icons.info_outline,
-              ),
-
-              // FECHA SOLICITUD SERVICIO.
-              _buildInputField(
-                label: 'Fecha *',
-                controller: _fechaController,
-                readOnly: true,
-                onTap: _selectDate,
-                suffixIcon: Icon(Icons.calendar_today, color: Color(0xFF4285F4)),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor seleccione una fecha';
-                  }
-                  return null;
-                },
-              ),
-
-              // HORA DEL SERVICIO.
-              _buildInputField(
-                label: 'Hora *',
-                controller: _horaController,
-                readOnly: true,
-                onTap: _selectTime,
-                suffixIcon: Icon(Icons.access_time, color: Color(0xFF4285F4)),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor seleccione una hora';
-                  }
-                  return null;
-                },
-              ),
-
-              // CATEGORIA DEL SERVICIO DE LA SOLICITUD.
-              _buildDropdownField<CategoriaServicio>(
-                label: 'Categoría de Servicio *',
-                value: _selectedCategoria,
-                items: CategoriaServicio.values,
-                getDisplayName: (categoria) => categoria.displayName,
-                onChanged: (categoria) {
-                  setState(() {
-                    _selectedCategoria = categoria;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Por favor seleccione una categoría';
-                  }
-                  return null;
-                },
-              ),
-
-              // DURACION ESTIMADA.
-              _buildInputField(
-                label: 'Duración Estimada (horas) *',
-                controller: _duracionEstimadaController,
-                keyboardType: TextInputType.number,
-                suffixIcon: Icon(Icons.access_time, color: Color(0xFF4285F4)),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese la duración estimada';
-                  }
-                  final duracion = int.tryParse(value);
-                  if (duracion == null || duracion <= 0) {
-                    return 'Por favor ingrese un número entero mayor a 0';
-                  }
-                  if (duracion > 24) {
-                    return 'La duración no puede ser mayor a 24 horas';
-                  }
-                  return null;
-                },
-              ),
-
-              // DIRECCION DE DOMICILIO.
-              _buildInputField(
-                label: 'Dirección del Servicio *',
-                controller: _direccionController,
-                maxLines: 2,
-                suffixIcon: Icon(Icons.location_on, color: Color(0xFF4285F4)),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese la dirección';
-                  }
-                  return null;
-                },
-              ),
-
-              // TIPO DE LUGAR.
-              _buildInputField(
-                label: 'Tipo de Lugar *',
-                controller: _tipoLugarController,
-                suffixIcon: Icon(Icons.business, color: Color(0xFF4285F4)),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese el tipo de lugar';
-                  }
-                  return null;
-                },
-              ),
-
-              // COMENTARIOS ADICIONALES.
-              _buildInputField(
-                label: 'Comentarios Adicionales',
-                controller: _comentariosController,
-                maxLines: 3,
-                suffixIcon: Icon(Icons.comment, color: Color(0xFF4285F4)),
-                validator: (value) => null,
-              ),
-
-              SizedBox(height: 32),
-
-              // BOTONES.
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300],
-                        foregroundColor: Colors.black54,
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
+                  // MOSTRAR ERROR SI EXISTE
+                  if (servicioProvider.error != null) ...[
+                    SizedBox(height: 16),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red[200]!),
                       ),
-                      child: Text(
-                        'Cancelar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _solicitarCita,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF4285F4),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: _isLoading
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              'Solicitar Cita',
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline,
+                              color: Colors.red[700], size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              servicioProvider.error!,
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                                  color: Colors.red[700], fontSize: 14),
                             ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

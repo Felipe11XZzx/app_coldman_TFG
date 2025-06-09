@@ -5,17 +5,17 @@ import 'package:app_coldman_sa/data/models/empleado_model.dart';
 import 'package:app_coldman_sa/providers/servicio_provider.dart';
 
 
-class ScreenPagoServicio extends StatefulWidget {
+class ScreenInformes extends StatefulWidget {
   
   final Empleado empleado;
-  const ScreenPagoServicio({super.key, required this.empleado});
+  const ScreenInformes({super.key, required this.empleado});
 
   @override
-  _ScreenEstadoPagoServicio createState() => _ScreenEstadoPagoServicio();
+  _ScreenEstadoInforme createState() => _ScreenEstadoInforme();
 
 }
 
-class _ScreenEstadoPagoServicio extends State<ScreenPagoServicio> {
+class _ScreenEstadoInforme extends State<ScreenInformes> {
   late ServicioProvider servicioProvider;
   Map<int, int> cantidades = {};
 

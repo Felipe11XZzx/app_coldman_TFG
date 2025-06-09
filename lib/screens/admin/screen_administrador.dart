@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:app_coldman_sa/screens/admin/screen_asignar_servicio.dart';
+import 'package:app_coldman_sa/screens/admin/screen_estado_servicio.dart';
 import 'package:app_coldman_sa/screens/admin/screen_gestion_clientes.dart';
 import 'package:app_coldman_sa/screens/admin/screen_gestion_informes.dart';
 import 'package:flutter/material.dart';
@@ -11,9 +11,7 @@ import 'package:app_coldman_sa/screens/user/screen_perfil.dart';
 import 'package:app_coldman_sa/screens/login/screen_inicio_sesion.dart';
 import 'package:app_coldman_sa/widgets/widget_drawer.dart';
 
-
 class ScreenAdministrador extends StatefulWidget {
-  
   final Empleado empleadoAdministrador;
   const ScreenAdministrador({super.key, required this.empleadoAdministrador});
 
@@ -50,8 +48,13 @@ class _ScreenEstadoAdministrador extends State<ScreenAdministrador> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text("Bienvenido ${widget.empleadoAdministrador.nombre}"),
+        backgroundColor: Color(0xFF3B82F6),
+        foregroundColor: Colors.white,
+        title: Text("Bienvenido ${widget.empleadoAdministrador.nombre}",
+            style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Colors.white)),
       ),
       drawer: CustomDrawer(
         onMiPerfil: _pantallaPerfil,
@@ -72,15 +75,31 @@ class _ScreenEstadoAdministrador extends State<ScreenAdministrador> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/images/logo_coldman.png',
-                  width: 300,
-                  height: 80,
-                  fit: BoxFit.contain,
+                Center(
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: 32),
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/images/logo_coldman.png',
+                      width: 300,
+                      height: 80,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-
                 SizedBox(height: 140),
-
                 CustomAdminButton(
                   text: 'Gestión Usuarios',
                   myFunction: () {
@@ -93,19 +112,6 @@ class _ScreenEstadoAdministrador extends State<ScreenAdministrador> {
                     );
                   },
                   icon: Icons.group,
-                ),
-                const SizedBox(height: 20),
-
-                CustomAdminButton(
-                  text: 'Gestión Asignar Servicios',
-                  myFunction: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ScreenAsignarServicio()),
-                    );
-                  },
-                  icon: Icons.assignment,
                 ),
                 const SizedBox(height: 20),
                 CustomAdminButton(
@@ -122,7 +128,6 @@ class _ScreenEstadoAdministrador extends State<ScreenAdministrador> {
                   icon: Icons.people,
                 ),
                 const SizedBox(height: 20),
-
                 CustomAdminButton(
                   text: 'Gestión Agenda Servicios',
                   myFunction: () {
@@ -135,7 +140,18 @@ class _ScreenEstadoAdministrador extends State<ScreenAdministrador> {
                   icon: Icons.calendar_today,
                 ),
                 const SizedBox(height: 20),
-
+                CustomAdminButton(
+                  text: 'Gestión Estado Servicios',
+                  myFunction: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ScreenEstadoServicios()),
+                    );
+                  },
+                  icon: Icons.calendar_today,
+                ),
+                const SizedBox(height: 20),
                 CustomAdminButton(
                   text: 'Gestión Informes Servicios',
                   myFunction: () {

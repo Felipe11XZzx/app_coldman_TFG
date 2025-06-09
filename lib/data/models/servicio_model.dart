@@ -1,11 +1,12 @@
 import 'package:app_coldman_sa/data/models/empleado_model.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:app_coldman_sa/data/models/cita_model.dart'; 
+import 'package:app_coldman_sa/data/models/cita_model.dart';
+
 
 // ENUM PARA CATEGORÍAS DE SERVICIO
 enum CategoriaServicio {
-
   mantenimiento('MANTENIMIENTO', 'Mantenimiento'),
   instalacion('INSTALACION', 'Instalacion Maquinaria'),
   acondicionado('ACONDICIONADO', 'Aire Acondicionado'),
@@ -13,7 +14,7 @@ enum CategoriaServicio {
   frigorificas('FRIGORIFICAS', 'Camaras Frigorificas');
 
   const CategoriaServicio(this.backendValue, this.displayName);
-  
+
   final String backendValue;
   final String displayName;
 
@@ -36,20 +37,21 @@ enum CategoriaServicio {
 
   @override
   String toString() => displayName;
-
 }
 
 // ENUM PARA CATEGORÍAS DEL ESTADO DEL SERVICIO.
 enum EstadoServicio {
-
   programada('PROGRAMADA', 'Programada'),
   progresando('PROGRESANDO', 'Progresando'),
   completada('COMPLETADA', 'Completada'),
   cancelada('CANCELADA', 'Cancelada'),
-  reprogramada('REPROGRAMADA', 'Reprogramada');
+  reprogramada('REPROGRAMADA', 'Reprogramada'),
+  inactivo('INACTIVO', 'Inactivo'),
+  archivado('ARCHIVADO', 'Archivado'),
+  eliminado('ELIMINADO', 'Eliminado');
 
   const EstadoServicio(this.backendValue, this.displayName);
-  
+
   final String backendValue;
   final String displayName;
 
@@ -65,6 +67,12 @@ enum EstadoServicio {
         return EstadoServicio.cancelada;
       case 'REPROGRAMADA':
         return EstadoServicio.reprogramada;
+      case 'INACTIVO':
+        return EstadoServicio.inactivo;
+      case 'ARCHIVADO':
+        return EstadoServicio.archivado;
+      case 'ELIMINADO':
+        return EstadoServicio.eliminado;
       default:
         return EstadoServicio.programada;
     }
@@ -72,12 +80,10 @@ enum EstadoServicio {
 
   @override
   String toString() => displayName;
-
 }
 
 // CLASE AUXILIAR PARA COORDENADAS
 class Coordenada {
-
   final double lat;
   final double lng;
 
@@ -126,12 +132,10 @@ class Coordenada {
 
   @override
   int get hashCode => lat.hashCode ^ lng.hashCode;
-
 }
 
 // MODELO PRINCIPAL DE SERVICIO
 class Servicio {
-
   final int? idServicio;
   final String nombre;
   final String descripcion;
@@ -143,7 +147,9 @@ class Servicio {
   final int? duracionReal;
   final DateTime? fechaInicioServicio;
   final DateTime? fechaFinServicio;
-
+  final Cita? cita; // ID PARA RELACIONAR EL SERVICIO CON LA CITA.
+  final DateTime? fechaEliminacion;
+  final String? motivoEliminacion;
 
   const Servicio({
     this.idServicio,
@@ -156,7 +162,10 @@ class Servicio {
     this.empleadoAsignado,
     required this.duracionReal,
     required this.fechaInicioServicio,
-    required this.fechaFinServicio
+    required this.fechaFinServicio,
+    this.cita,
+    this.fechaEliminacion,
+    this.motivoEliminacion,
   });
 
   // FACTORY CONSTRUCTOR VACIO.
@@ -171,11 +180,17 @@ class Servicio {
       duracionReal: 0,
       fechaInicioServicio: DateTime.timestamp(),
       fechaFinServicio: DateTime.timestamp(),
+      cita: null,
+      fechaEliminacion: null,
+      motivoEliminacion: null,
     );
   }
 
+  static Logger logger = Logger();
+
   // DESDE JSON DEL BACKEND
   factory Servicio.fromJson(Map<String, dynamic> json) {
+
     // MANEJAR COORDENADAS DESDE EL BACKEND.
     Coordenada? coordenadas;
     if (json['localizacion_coordenada'] != null) {
@@ -197,11 +212,22 @@ class Servicio {
     }
 
     // VERIFICACION SI LAS COORDENAS VIENEN POR SEPARADO ("LATITUD Y LONGITUD").
-    if (coordenadas == null && json['latitud'] != null && json['longitud'] != null) {
+    if (coordenadas == null &&
+        json['latitud'] != null &&
+        json['longitud'] != null) {
       coordenadas = Coordenada(
         lat: (json['latitud'] as num).toDouble(),
         lng: (json['longitud'] as num).toDouble(),
       );
+    }
+
+    Cita? cita;
+    if (json['cita'] != null) {
+      try {
+        cita = Cita.fromJson(json['cita']);
+      } catch (e) {
+        debugPrint('Error parsing cita: $e');
+      }
     }
 
     return Servicio(
@@ -213,22 +239,30 @@ class Servicio {
           : CategoriaServicio.instalacion,
       localizacionCoordenadas: coordenadas,
       estadoServicio: json['estado_servicio'] != null
-          ? EstadoServicio.fromString(json['estado_servicio'])
-          : EstadoServicio.programada,
-      fechaCreacion: _parseArrayToDateTime(json['fecha_creacion']),
+    ? (() {
+        final estado = EstadoServicio.fromString(json['estado_servicio']);
+        return estado;
+      })()
+    : EstadoServicio.programada,
+      fechaCreacion: _parseDateTimeFromBackend(
+          json['fecha_creacion_servicio'] ?? json['fecha_creacion']),
       empleadoAsignado: json['empleado_asignado'] != null
-        ? Empleado.fromJson(json['empleado_asignado'])
-        : null,
+          ? Empleado.fromJson(json['empleado_asignado'])
+          : null,
       duracionReal: json['duracion_real'],
-        fechaInicioServicio: json['fecha_incio_servicio'] != null 
-          ? DateTime.parse(json['fecha_incio_servicio'].toString()) 
+      fechaInicioServicio: json['fecha_incio_servicio'] != null
+          ? _parseDateTimeFromBackend(json['fecha_incio_servicio'])
           : null,
-      fechaFinServicio: json['fecha_fin_servicio'] != null 
-          ? DateTime.parse(json['fecha_fin_servicio'].toString()) 
+      fechaFinServicio: json['fecha_fin_servicio'] != null
+          ? _parseDateTimeFromBackend(json['fecha_fin_servicio'])
           : null,
+      cita: cita, // ✅ AGREGADO
+      fechaEliminacion: json['fecha_eliminacion'] != null // ✅ AGREGADO
+          ? _parseDateTimeFromBackend(json['fecha_eliminacion'])
+          : null,
+      motivoEliminacion: json['motivo_eliminacion'], // ✅ AGREGADO
     );
   }
-
   // A JSON PARA EL BACKEND
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> json = {
@@ -238,9 +272,8 @@ class Servicio {
       'estado_servicio': estadoServicio.backendValue,
       "duracion_real": duracionReal,
       'fecha_creacion_servicio': fechaCreacion.toIso8601String(),
-      'fecha_inicio_servicio': fechaCreacion.toIso8601String(),
-      'fecha_fin_servicio': fechaCreacion.toIso8601String()
-
+      'fecha_inicio_servicio': fechaInicioServicio?.toIso8601String(),
+      'fecha_fin_servicio': fechaFinServicio?.toIso8601String(),
     };
 
     // AGREGAR ID SOLO SI EXISTE.
@@ -255,6 +288,19 @@ class Servicio {
 
     if (empleadoAsignado != null) {
       json['empleado_asignado'] = empleadoAsignado!.toJson();
+    }
+
+    // ✅ AGREGADO: Manejar campos de eliminación
+    if (fechaEliminacion != null) {
+      json['fecha_eliminacion'] = fechaEliminacion!.toIso8601String();
+    }
+
+    if (motivoEliminacion != null) {
+      json['motivo_eliminacion'] = motivoEliminacion;
+    }
+
+    if (cita != null) {
+      json['cita'] = cita!.toJson();
     }
 
     return json;
@@ -280,63 +326,79 @@ class Servicio {
     int? duracionReal,
     DateTime? fechaInicioServicio,
     DateTime? fechaFinServicio,
-
+    Cita? cita,
+    DateTime? fechaEliminacion,
+    String? motivoEliminacion,
   }) {
     return Servicio(
       idServicio: idServicio ?? this.idServicio,
       nombre: nombre ?? this.nombre,
       descripcion: descripcion ?? this.descripcion,
       categoriaServicio: categoriaServicio ?? this.categoriaServicio,
-      localizacionCoordenadas: localizacionCoordenadas ?? this.localizacionCoordenadas,
+      localizacionCoordenadas:
+          localizacionCoordenadas ?? this.localizacionCoordenadas,
       estadoServicio: estadoServicio ?? this.estadoServicio,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       empleadoAsignado: empleadoAsignado ?? this.empleadoAsignado,
       duracionReal: duracionReal ?? this.duracionReal,
       fechaInicioServicio: fechaInicioServicio ?? this.fechaInicioServicio,
-      fechaFinServicio: fechaFinServicio ?? this.fechaFinServicio
+      fechaFinServicio: fechaFinServicio ?? this.fechaFinServicio,
+      cita: cita ?? this.cita,
+      // ✅ NUEVOS CAMPOS
+      fechaEliminacion: fechaEliminacion ?? this.fechaEliminacion,
+      motivoEliminacion: motivoEliminacion ?? this.motivoEliminacion,
     );
   }
 
-  // Función helper para convertir array a DateTime
-static DateTime _parseArrayToDateTime(dynamic dateArray) {
-  try {
-    if (dateArray is List && dateArray.length >= 3) {
-      int year = dateArray[0];
-      int month = dateArray[1];
-      int day = dateArray[2];
-      int hour = dateArray.length > 3 ? dateArray[3] : 0;
-      int minute = dateArray.length > 4 ? dateArray[4] : 0;
-      int second = dateArray.length > 5 ? dateArray[5] : 0;
-      
-      return DateTime(year, month, day, hour, minute, second);
+  // MÉTODO HELPER ACTUALIZADO para parsear tanto arrays como timestamps
+  // MÉTODO HELPER para parsear fechas
+  static DateTime _parseDateTimeFromBackend(dynamic dateValue) {
+    try {
+      if (dateValue is int) {
+        return DateTime.fromMillisecondsSinceEpoch(dateValue);
+      }
+      if (dateValue is String) {
+        return DateTime.parse(dateValue);
+      }
+    } catch (e) {
+      debugPrint('Error parsing date in Cliente: $e, value: $dateValue');
     }
-  } catch (e) {
-    debugPrint('Error parsing date array: $e');
+    return DateTime.now();
   }
-  
-  return DateTime.now();
-}
 
   // GETTERS DEL MODELO DE SERVICIOS.
   bool get tieneCoordenadas => localizacionCoordenadas != null;
-  bool get esMantemiento => categoriaServicio == CategoriaServicio.mantenimiento;
+  bool get esMantemiento =>
+      categoriaServicio == CategoriaServicio.mantenimiento;
   bool get esInstalacion => categoriaServicio == CategoriaServicio.instalacion;
-  bool get esAcondicionado => categoriaServicio == CategoriaServicio.acondicionado;
+  bool get esAcondicionado =>
+      categoriaServicio == CategoriaServicio.acondicionado;
   bool get esCaldera => categoriaServicio == CategoriaServicio.calderas;
   bool get esFrigorifica => categoriaServicio == CategoriaServicio.frigorificas;
   LatLng? get coordenadasLatLng => localizacionCoordenadas?.toLatLng();
   String get categoriaDisplayName => categoriaServicio.displayName;
-  bool get tieneEmpleadoAsignado => empleadoAsignado != null;
-  String get nombreEmpleadoAsignado => empleadoAsignado != null ? '${empleadoAsignado!.nombre} ${empleadoAsignado!.apellidos}' : 'Sin asignar';
-  bool get puedeSerAsignado => estadoServicio == EstadoServicio.programada && !tieneEmpleadoAsignado;
+  bool get estaEliminado => fechaEliminacion != null; // ✅ AGREGADO
+  bool get tieneCita =>
+      cita !=
+      null; // ✅ AGRE  bool get tieneEmpleadoAsignado => empleadoAsignado != null;
+  String get nombreEmpleadoAsignado => empleadoAsignado != null
+      ? '${empleadoAsignado!.nombre} ${empleadoAsignado!.apellidos}'
+      : 'Sin asignar';
+  bool get puedeSerAsignado => estadoServicio == EstadoServicio.programada;
   bool get estaEnProgreso => estadoServicio == EstadoServicio.progresando;
   bool get estaCompletado => estadoServicio == EstadoServicio.completada;
   int getIdServicio() => idServicio!;
-
+  bool get tieneEmpleadoAsignado => empleadoAsignado != null;
+  bool get estaArchivado => estadoServicio == EstadoServicio.archivado;
+  bool get estaInactivo => estadoServicio == EstadoServicio.inactivo;
+  bool get esVisible =>
+      estadoServicio.esActivo; // No está eliminado, archivado o inactivo
+  bool get puedeSerEditado => estadoServicio.esModificable;
+  bool get puedeSerEliminado => !estadoServicio.esFinal;
 
   @override
   String toString() {
-    return 'Servicio{id: $idServicio, nombre: $nombre, estado: ${estadoServicio.displayName}, empleado: $nombreEmpleadoAsignado}';
+    return 'Servicio{id: $idServicio, nombre: $nombre, estado: ${estadoServicio.displayName}, empleado: $nombreEmpleadoAsignado, cita $cita}';
   }
 
   @override
@@ -353,7 +415,10 @@ static DateTime _parseArrayToDateTime(dynamic dateArray) {
         other.duracionReal == duracionReal &&
         other.fechaCreacion == fechaCreacion &&
         other.fechaInicioServicio == fechaInicioServicio &&
-        other.fechaFinServicio == fechaFinServicio;
+        other.fechaFinServicio == fechaFinServicio &&
+        other.cita == cita &&
+        other.fechaEliminacion == fechaEliminacion &&
+        other.motivoEliminacion == motivoEliminacion;
   }
 
   @override
@@ -369,10 +434,21 @@ static DateTime _parseArrayToDateTime(dynamic dateArray) {
       duracionReal,
       fechaCreacion,
       fechaInicioServicio,
-      fechaFinServicio
+      fechaFinServicio,
+      cita,
+      fechaEliminacion,
+      motivoEliminacion,
     );
   }
+
+  bool get estaCancelado => estadoServicio == EstadoServicio.cancelada;
+  bool get tieneMotivoCancelacion =>
+      motivoEliminacion != null && motivoEliminacion!.isNotEmpty;
+  String get motivoCancelacionDisplay =>
+      motivoEliminacion ?? 'Sin motivo especificado';
 }
+
+Logger logger = Logger();
 
 // FUNCION AUXILIAR PARA PARSEAR COORDENADAS JSON.
 Map<String, dynamic>? _parseCoordinatesFromJson(String jsonString) {
@@ -380,10 +456,10 @@ Map<String, dynamic>? _parseCoordinatesFromJson(String jsonString) {
     // PARSEO SIMPLE PARA COORDENADAS CON LATITUD Y LONGITUD EN JSON {"lat": 41.6488, "lng": -0.8891}
     final RegExp latRegex = RegExp(r'"lat"\s*:\s*([+-]?\d*\.?\d+)');
     final RegExp lngRegex = RegExp(r'"lng"\s*:\s*([+-]?\d*\.?\d+)');
-    
+
     final latMatch = latRegex.firstMatch(jsonString);
     final lngMatch = lngRegex.firstMatch(jsonString);
-    
+
     if (latMatch != null && lngMatch != null) {
       return {
         'lat': double.parse(latMatch.group(1)!),
@@ -391,8 +467,73 @@ Map<String, dynamic>? _parseCoordinatesFromJson(String jsonString) {
       };
     }
   } catch (e) {
-    debugPrint('Error parsing coordinates JSON: $e');
+    logger.e('Error parsing coordinates JSON: $e');
   }
   return null;
-  
+}
+
+// ✅ EXTENSIÓN PARA FUNCIONES DE UTILIDAD
+extension EstadoServicioExtension on EstadoServicio {
+  // Estados que se consideran "activos" (visibles por defecto)
+  bool get esActivo {
+    return this != EstadoServicio.eliminado &&
+        this != EstadoServicio.archivado &&
+        this != EstadoServicio.inactivo;
+  }
+
+  // Estados que permiten modificaciones
+  bool get esModificable {
+    return this == EstadoServicio.programada ||
+        this == EstadoServicio.reprogramada;
+  }
+
+  // Estados finales (no cambian)
+  bool get esFinal {
+    return this == EstadoServicio.completada ||
+        this == EstadoServicio.eliminado;
+  }
+
+  // Color para la UI
+  Color get color {
+    switch (this) {
+      case EstadoServicio.programada:
+        return Colors.blue;
+      case EstadoServicio.progresando:
+        return Colors.orange;
+      case EstadoServicio.completada:
+        return Colors.green;
+      case EstadoServicio.cancelada:
+        return Colors.red;
+      case EstadoServicio.reprogramada:
+        return Colors.purple;
+      case EstadoServicio.inactivo:
+        return Colors.grey;
+      case EstadoServicio.archivado:
+        return Colors.brown;
+      case EstadoServicio.eliminado:
+        return Colors.red[900]!;
+    }
+  }
+
+  // Icono para la UI
+  IconData get icon {
+    switch (this) {
+      case EstadoServicio.programada:
+        return Icons.schedule;
+      case EstadoServicio.progresando:
+        return Icons.play_circle;
+      case EstadoServicio.completada:
+        return Icons.check_circle;
+      case EstadoServicio.cancelada:
+        return Icons.cancel;
+      case EstadoServicio.reprogramada:
+        return Icons.refresh;
+      case EstadoServicio.inactivo:
+        return Icons.pause_circle;
+      case EstadoServicio.archivado:
+        return Icons.archive;
+      case EstadoServicio.eliminado:
+        return Icons.delete_forever;
+    }
+  }
 }

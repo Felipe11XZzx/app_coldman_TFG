@@ -339,7 +339,7 @@ class EmpleadoProvider with ChangeNotifier {
 
   // METODO PARA OBTENER TODOS LOS EMPLEADOS DISPONIBLES.
   Future<void> obtenerEmpleadosDisponibles() async {
-    logger.e('=== OBTENIENDO EMPLEADOS DISPONIBLES ===');
+    logger.i('=== OBTENIENDO EMPLEADOS DISPONIBLES ===');
     _setLoading(true);
     _clearError();
 
@@ -348,7 +348,7 @@ class EmpleadoProvider with ChangeNotifier {
           await empleadosRepository.obtenerEmpleadosDisponibles();
       for (int i = 0; i < _empleadosDisponibles.length; i++) {
         final emp = _empleadosDisponibles[i];
-        logger.e('[$i] ${emp.nombre} ${emp.apellidos} (ID: ${emp.id})');
+        logger.i('[$i] ${emp.nombre} ${emp.apellidos} (ID: ${emp.id})');
       }
 
       notifyListeners();
@@ -357,7 +357,7 @@ class EmpleadoProvider with ChangeNotifier {
       _setError(e.toString());
     } finally {
       _setLoading(false);
-      logger.e('=== FIN OBTENER EMPLEADOS DISPONIBLES ===');
+      logger.i('=== FIN OBTENER EMPLEADOS DISPONIBLES ===');
     }
   }
 

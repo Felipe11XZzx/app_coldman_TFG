@@ -13,3 +13,4 @@ analyzer:
     prefer_final_fields: ignore
     curly_braces_in_flow_control_structures: ignore
     avoid_web_libraries_in_flutter: ignore
+    unreachable_switch_default: ignore

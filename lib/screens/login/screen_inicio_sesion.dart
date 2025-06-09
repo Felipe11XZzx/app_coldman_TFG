@@ -1,5 +1,4 @@
 import 'package:app_coldman_sa/screens/admin/screen_crear_servicio.dart';
-import 'package:app_coldman_sa/screens/admin/screen_asignar_servicio.dart';
 import 'package:app_coldman_sa/screens/customer/screen_solicitar_cita.dart';
 import 'package:app_coldman_sa/screens/login/screen_registro_cliente.dart';
 import 'package:flutter/material.dart';
@@ -389,12 +388,30 @@ class _ScreenInicioSesionEstado extends State<ScreenInicioSesion> {
                 SizedBox(height: 40),
                 Column(
                   children: [
-                    Image.asset(
-                      'assets/images/logo_coldman.png',
-                      width: 300,
-                      height: 80,
-                      fit: BoxFit.contain,
+                    Center(
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 32),
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/images/logo_coldman.png',
+                        width: 300,
+                        height: 80,
+                        fit: BoxFit.contain,
+                      ),
                     ),
+                  ),
                     SizedBox(height: 60),
 
                     // CAMPO EMAIL LOGIN.

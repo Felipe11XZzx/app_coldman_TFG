@@ -15,12 +15,12 @@ class ApiService {
 
   ApiService() {
     _dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
-      logger.d('Request: ${options.method} ${options.path}');
-      logger.d('Request Data: ${options.data}');
+      logger.i('Request: ${options.method} ${options.path}');
+      logger.i('Request Data: ${options.data}');
       return handler.next(options);
     }, onResponse: (response, handler) {
-      logger.d('Response: ${response.statusCode}');
-      logger.d('Response Data: ${response.data}');
+      logger.i('Response: ${response.statusCode}');
+      logger.i('Response Data: ${response.data}');
       return handler.next(response);
     }, onError: (DioException e, handler) {
       logger.e(
@@ -36,7 +36,7 @@ class ApiService {
     try {
       logger.i('Creando servicio: ${servicioData['nombre']}');
       
-      final response = await _dio.post('/service', data: servicioData);
+      final response = await _dio.post('/servicios', data: servicioData);
       
       if (response.statusCode == 201 && response.data['success'] == true) {
         logger.i('Servicio creado exitosamente: ID ${response.data['servicio']['id_servicio']}');
@@ -59,7 +59,7 @@ class ApiService {
     try {
       logger.i('Obteniendo servicio ID: $id');
 
-      final response = await _dio.get('/service/$id');
+      final response = await _dio.get('/servicios/$id');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         logger.i('Servicio obtenido: ${response.data['servicio']['nombre_servicio']}');
@@ -104,7 +104,7 @@ class ApiService {
     try {
       logger.i('Actualizando servicio ID: $id');
 
-      final response = await _dio.put('/service/$id', data: servicioData);
+      final response = await _dio.put('/servicios/$id', data: servicioData);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         logger.i('Servicio actualizado: ${response.data['servicio']['nombre_servicio']}');
@@ -142,7 +142,7 @@ class ApiService {
     try {
       logger.i('Obteniendo estadísticas...');
 
-      final response = await _dio.get('/service/estadisticas');
+      final response = await _dio.get('/servicios/estadisticas');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         logger.i('Estadísticas obtenidas');
@@ -161,7 +161,7 @@ class ApiService {
     try {
       logger.i('Buscando servicios por categoría: $categoria');
 
-      final response = await _dio.get('/service/categoria/$categoria');
+      final response = await _dio.get('/servicios/categoria/$categoria');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final int total = response.data['total'] ?? 0;
@@ -181,7 +181,7 @@ class ApiService {
     try {
       logger.i('Buscando servicios por estado: $estado');
 
-      final response = await _dio.get('/service/estado/$estado');
+      final response = await _dio.get('/servicios/estado/$estado');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final int total = response.data['total'] ?? 0;
@@ -201,7 +201,7 @@ class ApiService {
     try {
       logger.i('Obteniendo servicios con coordenadas...');
 
-      final response = await _dio.get('/service/con-coordenadas');
+      final response = await _dio.get('/servicios/con-coordenadas');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final int total = response.data['total'] ?? 0;
@@ -221,7 +221,7 @@ class ApiService {
     try {
       logger.i('Buscando servicios por nombre: $nombre');
 
-      final response = await _dio.get('/service/buscar', queryParameters: {'nombre': nombre});
+      final response = await _dio.get('/servicios/buscar', queryParameters: {'nombre': nombre});
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final int total = response.data['total'] ?? 0;
@@ -245,7 +245,7 @@ class ApiService {
       if (minPrecio != null) queryParams['minPrecio'] = minPrecio;
       if (maxPrecio != null) queryParams['maxPrecio'] = maxPrecio;
 
-      final response = await _dio.get('/service/precio', queryParameters: queryParams);
+      final response = await _dio.get('/servicios/precio', queryParameters: queryParams);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final int total = response.data['total'] ?? 0;

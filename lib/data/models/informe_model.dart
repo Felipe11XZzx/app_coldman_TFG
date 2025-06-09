@@ -1,5 +1,6 @@
 import 'package:app_coldman_sa/data/models/servicio_model.dart';
 import 'package:app_coldman_sa/data/models/cita_model.dart';
+import 'package:flutter/material.dart';
 
   // ENUM PARA CATEGORÍAS DE ESTADO DE LA CITA.
 enum EstadoInforme {
@@ -81,17 +82,20 @@ class InformeServicio {
   factory InformeServicio.fromJson(Map<String, dynamic> json) {
     return InformeServicio(
       idInforme: json['id_informe'] ?? 0,
-      estadoInforme: json['estado_informe'] != null ? EstadoInforme.fromString(json['estado_informe']) : EstadoInforme.borrador,
+      estadoInforme: json['estado_informe'] != null 
+          ? EstadoInforme.fromString(json['estado_informe']) 
+          : EstadoInforme.borrador,
       descripcionInforme: json['descripcion_informe'] ?? '',
       descripcionMateriales: json['descripcion_materiales'] ?? '',
       duracionHoras: json['duracion_horas'] ?? 0,
       duracionEstimada: json['duracion_estimada'] ?? 0,
       precioServicio: (json['precio_servicio'] as num?)?.toDouble() ?? 0.0,
-      avanceFotos:  json['avance_fotos'] ?? '',
+      avanceFotos: json['avance_fotos'] ?? '',
       observacionesInforme: json['observacion_informe'] ?? '',
       fechaCreacion: json['fecha_creacion'] != null 
-      ? DateTime.tryParse(json['fecha_creacion']) ?? DateTime.timestamp() 
-      : DateTime.now(),
+          ? _parseDateTimeFromBackend(json['fecha_creacion']) 
+          : DateTime.now(),
+          
       idCita: json['cita']?['id_cita'] ?? 0
     );
   }
@@ -152,6 +156,21 @@ class InformeServicio {
       idCita: idCita ?? this.idCita
     );
   }
+
+  static DateTime _parseDateTimeFromBackend(dynamic dateValue) {
+    try {
+      if (dateValue is int) {
+        return DateTime.fromMillisecondsSinceEpoch(dateValue);
+      }
+      if (dateValue is String) {
+        return DateTime.parse(dateValue);
+      }
+    } catch (e) {
+      debugPrint('Error parsing date in Informe: $e, value: $dateValue');
+    }
+    return DateTime.now();
+  }
+
 
   // GETTERS DEL MODELO DE INFORMES.
   bool get estaBorrador => estadoInforme == EstadoInforme.borrador;

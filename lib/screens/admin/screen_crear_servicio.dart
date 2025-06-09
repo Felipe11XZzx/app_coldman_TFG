@@ -63,19 +63,6 @@ class _ScreenEstadoCrearServicio extends State<ScreenCrearServicio> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      /*EN PRINCIPIO ESTE BOTON NO DEBERIA IR AQUI SI NO EN INFORMES 
-                        AL MOMENTO DE QUE EL EMPLEADO CREE UN INFORME.
-                      IconButton(
-                        onPressed: () async {
-                          final result = await Images.();
-                          if (result != null) {
-                            String? path = result['path'];
-                            Uint8List? bytes = result['bytes'];
-                          }
-                        },
-                        icon: const Icon(Icons.image),
-                      ),
-                      */
                     ],
                   ),
                 ],
@@ -108,9 +95,6 @@ class _ScreenEstadoCrearServicio extends State<ScreenCrearServicio> {
                     duracionReal: 0,
                     fechaInicioServicio: DateTime.timestamp(),
                     fechaFinServicio: DateTime.timestamp(),
-
-                    //informe: [],
-                    //empleado: Empleado.empty(),
                   );
 
                   final ServicioProvider servicioProvider =
@@ -223,24 +207,22 @@ class _ScreenEstadoCrearServicio extends State<ScreenCrearServicio> {
         children: [
           ListView.builder(
             padding: const EdgeInsets.only(bottom: 80),
-            itemCount: servicioProvider.servicios.length,
+            itemCount: servicioProvider.todosMenosEliminados.length,
             itemBuilder: (context, index) {
               return CustomService(
-                servicio: servicioProvider.servicios[index],
-                onEdit: () => _editService(servicioProvider.servicios[index]),
+                servicio: servicioProvider.todosMenosEliminados[index],
+                onEdit: () => _editService(servicioProvider.todosMenosEliminados[index]),
                 onDelete: () async {
                   bool? confirmar = await CustomDialogs.showConfirmDialog(
                       context: context,
                       title: "Confirmar eliminación",
                       content:
-                          "¿Está seguro de eliminar ${servicioProvider.servicios[index].nombre}?",
+                          "¿Está seguro de eliminar ${servicioProvider.todosMenosEliminados[index].nombre}?",
                       style: Text(''));
 
                   if (confirmar == true) {
                     await CustomDialogs.showLoadingSpinner(context);
-                    servicioProvider.deleteService(servicioProvider
-                        .servicios[index].idServicio
-                        .toString());
+                    servicioProvider.eliminarServicio(servicioProvider.todosMenosEliminados[index].idServicio!);
                     CustomDialogs.showSnackBar(
                         context, "Servicio eliminado correctamente",
                         color: Constants.successColor);

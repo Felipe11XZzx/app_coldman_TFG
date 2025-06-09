@@ -1,31 +1,35 @@
+import 'package:app_coldman_sa/data/models/empleado_model.dart';
 import 'package:app_coldman_sa/data/models/servicio_model.dart';
-import 'package:app_coldman_sa/screens/admin/screen_lista_servicios.dart';
-import 'package:flutter/material.dart';
+import 'package:app_coldman_sa/providers/empleado_provider.dart';
+import 'package:app_coldman_sa/providers/servicio_provider.dart';
+import 'package:app_coldman_sa/screens/admin/screen_detalle_servicio.dart';
 import 'package:app_coldman_sa/utils/constants.dart';
 import 'package:app_coldman_sa/utils/custom_dialogs.dart';
-import 'package:app_coldman_sa/data/models/empleado_model.dart';
-import 'package:app_coldman_sa/providers/servicio_provider.dart';
-import 'package:app_coldman_sa/providers/empleado_provider.dart';
 import 'package:app_coldman_sa/widgets/widget_services_list.dart';
-import 'package:app_coldman_sa/screens/admin/screen_detalle_servicio.dart';
+import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
-class ScreenServicios extends StatefulWidget {
-  const ScreenServicios({super.key});
+
+class ScreenEstadoServicios extends StatefulWidget {
+  
+  const ScreenEstadoServicios({super.key});
 
   @override
-  _ScreenServiciosEstado createState() => _ScreenServiciosEstado();
+  _ScreenEstadoDetalleServicio createState() => _ScreenEstadoDetalleServicio();
 }
 
-class _ScreenServiciosEstado extends State<ScreenServicios> {
+class _ScreenEstadoDetalleServicio extends State<ScreenEstadoServicios> {
   Logger logger = Logger();
   String _busqueda = '';
   CategoriaServicio? _filtroCategoria;
   EstadoServicio? _filtroEstado;
-
   bool _isLoading = false;
+  bool _mostrarEliminados = false;
+  bool confirmado = false;
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController motivoController = TextEditingController();
+  final ServicioProvider servicioProvider = ServicioProvider();
 
   @override
   void dispose() {
@@ -41,7 +45,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
     });
   }
 
-  // METODO PARA CARGAR LOS DATOS DE LOS SERVICIOS Y LOS EMPLEADOS.
+  // MÉTODO PARA CARGAR LOS DATOS DE LOS SERVICIOS Y LOS EMPLEADOS
   Future<void> _cargarDatosIniciales() async {
     await Future.wait([
       _cargarServicios(),
@@ -49,7 +53,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
     ]);
   }
 
-// METODO PARA CARGAR LOS EMPLEADOS.
+  // MÉTODO PARA CARGAR LOS EMPLEADOS
   Future<void> _cargarEmpleados() async {
     logger.i('=== CARGANDO EMPLEADOS ===');
     try {
@@ -69,7 +73,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
       final empleadoProvider =
           Provider.of<EmpleadoProvider>(context, listen: false);
 
-      // CARGAR LOS SERVICIOS Y EMPLEADOS AL MISMO TIEMPO.
+      // CARGAR LOS SERVICIOS Y EMPLEADOS AL MISMO TIEMPO
       await Future.wait([
         servicioProvider.fetchServices(),
         empleadoProvider.fetchEmpleados(),
@@ -82,50 +86,270 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
     }
   }
 
-// METODO PARA ELIMINAR LOS SERVICIOS EN LA SCREEN.
   Future<void> _eliminarServicio(Servicio servicio) async {
+    _mostrarOpcionesEliminacion(servicio);
+  }
+
+  void _mostrarOpcionesEliminacion(Servicio servicio) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.help_outline, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('¿Qué acción realizar?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Servicio: "${servicio.nombre}"',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            Text('Selecciona la acción que deseas realizar:'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _confirmarSoftDelete(servicio);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: Text('Ocultar', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _confirmarCancelar(servicio);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Cancelar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmarSoftDelete(Servicio servicio) async {
+    final TextEditingController motivoController = TextEditingController();
+
     final bool? confirmar = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) => AlertDialog(
+        title: Text('Ocultar Servicio'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+                'El servicio "${servicio.nombre}" será ocultado de la lista principal.'),
+            SizedBox(height: 16),
+            TextField(
+              controller: motivoController,
+              decoration: InputDecoration(
+                labelText: 'Motivo (opcional)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+            SizedBox(height: 8),
+            Text(
+              '💡 Podrás restaurarlo desde la vista de eliminados',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: Text('Ocultar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      CustomDialogs.showLoadingSpinner(context);
+
+      await Future.delayed(Duration(seconds: 1));
+
+      if (mounted) Navigator.pop(context);
+
+      CustomDialogs.showSnackBar(
+        context,
+        "Servicio '${servicio.nombre}' ocultado exitosamente",
+        color: Constants.successColor,
+      );
+
+      await _cargarServicios();
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+
+      CustomDialogs.showSnackBar(
+        context,
+        "Error: ${e.toString().replaceAll('Exception: ', '')}",
+        color: Constants.errorColor,
+      );
+    }
+  }
+
+  Future<void> _confirmarCancelar(Servicio servicio) async {
+    final TextEditingController motivoController = TextEditingController();
+
+    final bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Cancelar Servicio'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+                'El servicio "${servicio.nombre}" será marcado como CANCELADO.'),
+            SizedBox(height: 16),
+            TextField(
+              controller: motivoController,
+              decoration: InputDecoration(
+                labelText: 'Motivo de la cancelación',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Cancelar Servicio',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      CustomDialogs.showLoadingSpinner(context);
+
+      final servicioProvider =
+          Provider.of<ServicioProvider>(context, listen: false);
+      await servicioProvider.cambiarEstadoServicio(
+          servicio.idServicio!, EstadoServicio.cancelada);
+
+      if (mounted) Navigator.pop(context);
+
+      CustomDialogs.showSnackBar(
+        context,
+        "Servicio '${servicio.nombre}' cancelado exitosamente",
+        color: Constants.successColor,
+      );
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+
+      CustomDialogs.showSnackBar(
+        context,
+        "Error: ${e.toString().replaceAll('Exception: ', '')}",
+        color: Constants.errorColor,
+      );
+    }
+  }
+
+  Future<void> _cancelarServicio(Servicio servicio) async {
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
         return AlertDialog(
-          title: const Text('Confirmar eliminación'),
-          content: Text(
-            '¿Estás seguro de que quieres eliminar el servicio "${servicio.nombre}"?\n\nEsta acción no se puede deshacer.',
+          title: Text('Cancelar Servicio'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('¿Cancelar "${servicio.nombre}"?'),
+              SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: 'Motivo de cancelación',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.errorColor,
-              ),
-              child: const Text(
-                'Eliminar',
-                style: TextStyle(color: Colors.white),
-              ),
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: Text('Confirmar'),
             ),
           ],
         );
       },
     );
 
-    if (confirmar != true) return;
+    if (motivo == null || motivo.isEmpty) return;
+
+    try {
+      final servicioProvider =
+          Provider.of<ServicioProvider>(context, listen: false);
+      await servicioProvider.cambiarEstadoServicio(
+          servicio.idServicio!, EstadoServicio.cancelada);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Servicio cancelado'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      await _cargarServicios();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
 
     CustomDialogs.showLoadingSpinner(context);
 
     try {
       final servicioProvider =
           Provider.of<ServicioProvider>(context, listen: false);
-      await servicioProvider.eliminarServicio(servicio.idServicio!);
+
+      await servicioProvider.cambiarEstadoServicio(
+          servicio.idServicio!, EstadoServicio.cancelada);
 
       if (mounted) Navigator.of(context).pop();
 
       CustomDialogs.showSnackBar(
         context,
-        "Servicio '${servicio.nombre}' eliminado exitosamente",
+        "Servicio '${servicio.nombre}' cancelado exitosamente",
         color: Constants.successColor,
       );
 
@@ -133,72 +357,88 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
 
-      String errorMessage;
-
-      if (e.toString().contains('HAS_DEPENDENCIES')) {
-        // Extraer el mensaje específico del backend
-        final regex = RegExp(r'message: ([^}]+)');
-        final match = regex.firstMatch(e.toString());
-
-        if (match != null) {
-          errorMessage = match.group(1)?.replaceAll('}', '') ??
-              'No se puede eliminar el servicio porque tiene citas asociadas';
-        } else {
-          errorMessage =
-              'No se puede eliminar el servicio porque tiene citas asociadas';
-        }
-
-        // Mostrar un diálogo más informativo para este caso específico
-        _mostrarDialogoErrorDependencias(servicio, errorMessage);
-        return;
-      } else {
-        errorMessage = e.toString().replaceAll('Exception: ', '');
-      }
-
       CustomDialogs.showSnackBar(
         context,
-        "Error al eliminar servicio: $errorMessage",
+        "Error al cancelar servicio: ${e.toString().replaceAll('Exception: ', '')}",
         color: Constants.errorColor,
       );
     }
-  }
 
-  // METODO PARA ACTUALIZAR EL ESTADO DEL SERVICIO.
-  Future<void> _actualizarEstadoServicio(
-      Servicio servicio, EstadoServicio nuevoEstado) async {
-    bool? confirmado = await CustomDialogs.showConfirmDialog(
-        context: context,
-        title: "Confirmar cambio de estado",
-        content:
-            "¿Está seguro de cambiar el estado del servicio a '${nuevoEstado.displayName}'?",
-        style: const Text(''));
+    if (confirmado == true && motivoController.text.trim().isNotEmpty) {
+      try {
+        await CustomDialogs.showLoadingSpinner(context);
 
-    if (confirmado != true) return;
+        final servicioProvider =
+            Provider.of<ServicioProvider>(context, listen: false);
 
-    CustomDialogs.showLoadingSpinner(context);
+        await servicioProvider.cambiarEstadoServicio(
+            servicio.idServicio!, EstadoServicio.cancelada);
 
-    try {
-      final servicioProvider =
-          Provider.of<ServicioProvider>(context, listen: false);
-      final servicioActualizado =
-          servicio.copyWith(estadoServicio: nuevoEstado);
-      await servicioProvider.updateService(
-          servicioActualizado.idServicio.toString(), servicioActualizado);
+        if (mounted) Navigator.of(context).pop();
+        CustomDialogs.showSnackBar(
+          context,
+          "Servicio #${servicio.idServicio} cancelado exitosamente",
+          color: Constants.successColor,
+        );
 
-      if (mounted) Navigator.of(context).pop();
+        await _cargarServicios();
+      } catch (e) {
+        if (mounted) Navigator.of(context).pop();
 
-      CustomDialogs.showSnackBar(
-          context, "Estado actualizado a '${nuevoEstado.displayName}'",
-          color: Constants.successColor);
-    } catch (e) {
-      if (mounted) Navigator.of(context).pop();
-
-      CustomDialogs.showSnackBar(context, "Error al actualizar el servicio: $e",
-          color: Constants.errorColor);
+        CustomDialogs.showSnackBar(
+          context,
+          "Error al cancelar servicio: ${e.toString().replaceAll('Exception: ', '')}",
+          color: Constants.errorColor,
+        );
+      }
     }
   }
 
-// METODO PARA ASIGNAR EMPLEADO AL SERVICIO EN LA SCREEN.
+  Widget _buildMotivoCancelacion(Servicio servicio) {
+    if (!servicio.estaCancelado || !servicio.tieneMotivoCancelacion) {
+      return SizedBox.shrink();
+    }
+
+    return Container(
+      margin: EdgeInsets.only(top: 8),
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.red[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: Colors.red[700]),
+          SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Motivo de cancelación:',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red[700],
+                  ),
+                ),
+                Text(
+                  servicio.motivoCancelacionDisplay,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.red[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // MÉTODO PARA ASIGNAR EMPLEADO AL SERVICIO
   Future<void> _asignarEmpleadoAServicio(
       Servicio servicio, Empleado empleado) async {
     CustomDialogs.showLoadingSpinner(context);
@@ -206,11 +446,8 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
     try {
       final servicioProvider =
           Provider.of<ServicioProvider>(context, listen: false);
-
-      // LLAMO AL BACKEND PAR ASIGNAR EL EMPLEADO.
-      final servicioActualizado =
-          await servicioProvider.asignarEmpleadoAServicio(
-              servicio.getIdServicio(), empleado.getidEmpleado());
+      await servicioProvider.asignarEmpleadoAServicio(
+          servicio.getIdServicio(), empleado.getidEmpleado());
 
       if (mounted) Navigator.of(context).pop();
 
@@ -228,33 +465,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
     }
   }
 
-// METODO PARA QUITAR EL EMPLEADO DEL SERVICIO.
-  Future<void> _desasignarEmpleadoDeServicio(Servicio servicio) async {
-    CustomDialogs.showLoadingSpinner(context);
-
-    try {
-      final servicioProvider =
-          Provider.of<ServicioProvider>(context, listen: false);
-
-      await servicioProvider.desasignarEmpleadoDeServicio(servicio.idServicio!);
-
-      if (mounted) Navigator.of(context).pop();
-
-      CustomDialogs.showSnackBar(
-          context, "Empleado desasignado del servicio exitosamente",
-          color: Constants.successColor);
-
-      await _cargarServicios();
-    } catch (e) {
-      if (mounted) Navigator.of(context).pop();
-
-      CustomDialogs.showSnackBar(context,
-          "Error al desasignar empleado: ${e.toString().replaceAll('Exception: ', '')}",
-          color: Constants.errorColor);
-    }
-  }
-
-  // METODO PARA FILTRAR POR LOS SERVICIOS.
+  // MÉTODO PARA FILTRAR SERVICIOS
   List<Servicio> _filtrarServicios(List<Servicio> servicios) {
     return servicios.where((servicio) {
       if (_filtroEstado != null && servicio.estadoServicio != _filtroEstado) {
@@ -297,7 +508,6 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
                       'Total de Servicios: ${stats['total']}',
                       style: const TextStyle(
                         color: Colors.white,
-                        backgroundColor: Color.fromARGB(255, 101, 141, 206),
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -318,27 +528,10 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: IconButton(
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.blue[700],
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.all(12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  icon: Icon(
-                    Icons.assignment,
-                    size: 32,
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ScreenListaServicios(),
-                      ),
-                    );
-                  },
+                child: Icon(
+                  Icons.assignment,
+                  color: Colors.white,
+                  size: 32,
                 ),
               ),
             ],
@@ -428,7 +621,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
       color: Colors.grey[50],
       child: Column(
         children: [
-          // BARRA DE BUSQUEDA.
+          // BARRA DE BÚSQUEDA
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -462,13 +655,13 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
           ),
           const SizedBox(height: 12),
 
-          // FILTROS DE LA SCREEN.
+          // FILTROS
           Row(
             children: [
               const Icon(Icons.filter_list, color: Colors.grey),
               const SizedBox(width: 8),
 
-              // FILTRO POR ESTADO.
+              // FILTRO POR ESTADO
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,7 +708,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
               ),
               const SizedBox(width: 12),
 
-              // FILTRO POR CATEGORIA.
+              // FILTRO POR CATEGORÍA
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,7 +807,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
     );
   }
 
-// METODO PARA ASIGNAR EL EMPLEADO MEDIANTE MODAL.
+  // MÉTODO PARA ASIGNAR EMPLEADO MEDIANTE MODAL
   void _mostrarModalAsignarEmpleado(Servicio servicio) {
     logger.i('=== ABRIENDO MODAL ASIGNAR EMPLEADO ===');
     logger.i('Servicio ID: ${servicio.idServicio}');
@@ -675,18 +868,12 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
             logger.i(
                 'Construyendo lista con ${empleadosDisponibles.length} empleados');
 
-            for (int i = 0; i < empleadosDisponibles.length; i++) {
-              final emp = empleadosDisponibles[i];
-              logger.i(
-                  'Empleado para modal [$i]: ${emp.nombre} ${emp.apellidos}');
-            }
-
             return Container(
               padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // MODAL.
+                  // MODAL
                   Container(
                     width: 40,
                     height: 4,
@@ -697,7 +884,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
                   ),
                   const SizedBox(height: 16),
 
-                  // TITULO.
+                  // TÍTULO
                   Text(
                     'Asignar Empleado al Servicio #${servicio.idServicio}',
                     style: const TextStyle(
@@ -707,29 +894,23 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
                   ),
                   const SizedBox(height: 16),
 
-                  // LISTA DE EMPLEADOS.
+                  // LISTA DE EMPLEADOS
                   Flexible(
                     child: ListView.builder(
                       shrinkWrap: true,
                       itemCount: empleadosDisponibles.length,
                       itemBuilder: (context, index) {
                         final empleado = empleadosDisponibles[index];
-                        logger.i(
-                            'Construyendo ListTile $index: ${empleado.nombre}');
 
                         return ListTile(
                           leading: CircleAvatar(
-                            child: Text(empleado.nombre
-                                    ?.substring(0, 1)
-                                    .toUpperCase() ??
-                                'E'),
+                            child: Text(
+                                empleado.nombre.substring(0, 1).toUpperCase()),
                           ),
                           title:
                               Text('${empleado.nombre} ${empleado.apellidos}'),
-                          subtitle: Text(empleado.email ?? 'Sin email'),
+                          subtitle: Text(empleado.email),
                           onTap: () {
-                            logger
-                                .i('Empleado seleccionado: ${empleado.nombre}');
                             Navigator.pop(context);
                             _asignarEmpleadoAServicio(servicio, empleado);
                           },
@@ -748,59 +929,140 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
     );
   }
 
-  void _mostrarDialogoErrorDependencias(Servicio servicio, String mensaje) {
-    showDialog(
+  Future<void> _cambiarEstadoServicio(
+      Servicio servicio, EstadoServicio nuevoEstado) async {
+    try {
+      await servicioProvider.cambiarEstadoServicio(
+          servicio.idServicio!, nuevoEstado);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Estado cambiado a: ${nuevoEstado.displayName}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cambiar estado: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmarYCancelarServicio(Servicio servicio) async {
+    final TextEditingController motivoController = TextEditingController();
+
+    final bool? confirmar = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.warning, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('No se puede eliminar'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'El servicio "${servicio.nombre}" no puede ser eliminado.',
-                style: TextStyle(fontWeight: FontWeight.bold),
+      builder: (context) => AlertDialog(
+        title: Text('Cancelar Servicio'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('¿Está seguro de que desea cancelar este servicio?'),
+            SizedBox(height: 16),
+            TextField(
+              controller: motivoController,
+              decoration: InputDecoration(
+                labelText: 'Motivo de cancelación (opcional)',
+                border: OutlineInputBorder(),
               ),
-              SizedBox(height: 12),
-              Text(mensaje),
-              SizedBox(height: 16),
-              Text(
-                'Opciones disponibles:',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 8),
-              Text('• Cancelar o completar las citas asociadas'),
-              Text('• Cambiar el estado del servicio'),
-              Text('• Contactar con el administrador'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Entendido'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Opcionalmente, navegar a la gestión de citas relacionadas
-                // _navegarAGestionCitas(servicio);
-              },
-              child: const Text('Ver citas'),
+              maxLines: 2,
             ),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Sí, Cancelar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      await servicioProvider.cambiarEstadoServicio(
+          servicio.idServicio!, EstadoServicio.cancelada);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ Servicio cancelado exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmarYCompletarServicio(Servicio servicio) async {
+    final bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Completar Servicio'),
+        content: Text('¿Marcar este servicio como completado?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: Text('Sí, Completar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      await servicioProvider.cambiarEstadoServicio(
+          servicio.idServicio!, EstadoServicio.completada);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Servicio completado exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  Future<void> _iniciarServicio(Servicio servicio) async {
+    await servicioProvider.cambiarEstadoServicio(
+        servicio.idServicio!, EstadoServicio.progresando);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Servicio iniciado'), backgroundColor: Colors.orange),
     );
   }
 
-// METODO PARA NAVEGAR A LA SCREEN DE DETALLE SERVICIO.
+  Future<void> _reprogramarServicio(Servicio servicio) async {
+    await servicioProvider.cambiarEstadoServicio(
+        servicio.idServicio!, EstadoServicio.reprogramada);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Servicio reprogramado'),
+          backgroundColor: Colors.purple),
+    );
+  }
+
+  Future<void> _programarServicio(Servicio servicio) async {
+    await servicioProvider.cambiarEstadoServicio(
+        servicio.idServicio!, EstadoServicio.programada);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Servicio programado'),
+          backgroundColor: Colors.blue),
+    );
+  }
+
+  // MÉTODO PARA NAVEGAR AL DETALLE DEL SERVICIO
   void _navegarADetalleServicio(Servicio servicio) {
     Navigator.push(
       context,
@@ -851,7 +1113,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Gestión de Servicios"),
+        title: const Text("Gestión de Estados Servicios"),
         backgroundColor: Color(0xFF3B82F6),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -869,6 +1131,11 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
               switch (value) {
+                case 'toggle_eliminados':
+                  setState(() {
+                    _mostrarEliminados = !_mostrarEliminados;
+                  });
+                  break;
                 case 'export':
                   _exportarServicios();
                   break;
@@ -881,6 +1148,20 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
               }
             },
             itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'toggle_eliminados',
+                child: Row(
+                  children: [
+                    Icon(_mostrarEliminados
+                        ? Icons.visibility_off
+                        : Icons.visibility),
+                    SizedBox(width: 8),
+                    Text(_mostrarEliminados
+                        ? 'Ocultar eliminados'
+                        : 'Mostrar eliminados'),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'empleados',
                 child: Row(
@@ -968,14 +1249,14 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
 
           return Column(
             children: [
-              // NAVBAR DE ESTADISTICAS.
+              // NAVBAR DE ESTADÍSTICAS
               _buildHeaderEstadisticas(
                   servicioProvider.todosMenosEliminados, empleadosDisponibles),
 
-              // BARRA DE FILTROS Y BUSQUEDA.
+              // BARRA DE FILTROS Y BÚSQUEDA
               _buildFiltrosYBusqueda(),
 
-              // LISTA DE SERVICIOS.
+              // LISTA DE SERVICIOS
               Expanded(
                 child: serviciosFiltrados.isEmpty
                     ? _buildEmptyState()
@@ -987,10 +1268,13 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
                             final servicio = serviciosFiltrados[index];
                             return ServicioListItem(
                               servicio: servicio,
-                              onTap: () => _navegarADetalleServicio(servicio),
+                              onEstadoChanged: (nuevoEstado) async {
+                                await _cambiarEstadoServicio(
+                                    servicio, nuevoEstado!);
+                              },
                               onEliminar: () => _eliminarServicio(servicio),
-                              onAsignarEmpleado: () =>
-                                  _mostrarModalAsignarEmpleado(servicio),
+                              onTap: () => _navegarADetalleServicio(servicio),
+                              empleadosDisponibles: empleadosDisponibles,
                             );
                           },
                         ),
@@ -999,6 +1283,14 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
             ],
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/crear-servicio');
+        },
+        backgroundColor: Theme.of(context).primaryColor,
+        tooltip: "Crear nuevo servicio",
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

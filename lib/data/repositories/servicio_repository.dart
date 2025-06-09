@@ -1,24 +1,30 @@
 import 'package:app_coldman_sa/data/models/servicio_model.dart';
 import 'package:app_coldman_sa/data/services/api_service.dart';
+import 'package:logger/logger.dart';
 import 'package:dio/dio.dart';
 
 
 class ServicioRepository {
 
   final ApiService _apiService = ApiService();
+  Logger logger = Logger();
 
 
   // ENDPOINT DEL FRONTEND PARA OBTENER LA LISTA DE LOS SERVICIOS.
   Future<List<Servicio>> getListaServicios() async {
-    try {
-      final response = await _apiService.dio.get('/servicios');
-      return (response.data as List)
-          .map((json) => Servicio.fromJson(json))
-          .toList();
-    } catch (e) {
-      throw Exception('Error al obtener los Servicios: $e');
-    }
+  try {
+    final response = await _apiService.dio.get('/servicios');
+    
+    logger.i('Se cargaron los servicios correctamente');
+    
+    return (response.data as List)
+        .map((json) => Servicio.fromJson(json))
+        .toList();
+  } catch (e) {
+    throw Exception('Error al obtener los Servicios: $e');
   }
+}
+
 
   // ENDPOINT DEL FRONTEND PARA OBTENER LA LISTA DE LOS SERVICIOS POR EL ID DEL CLIENTE.
   Future<List<Servicio>> getServiciosPorCliente(int id) async {
@@ -36,7 +42,7 @@ class ServicioRepository {
   Future<Servicio> createService(Servicio servicio) async {
     try {
       final response = await _apiService.dio.post(
-        '/service',
+        '/servicios',
         data: servicio.toJson(),
       );
       return Servicio.fromJson(response.data);
@@ -49,7 +55,7 @@ class ServicioRepository {
   Future<Servicio> updateService(String serviceId, Servicio servicio) async {
     try {
       final response = await _apiService.dio.put(
-        '/service/$serviceId',
+        '/servicios/$serviceId',
         data: servicio.toJson(),
       );
       return Servicio.fromJson(response.data);
@@ -69,7 +75,7 @@ class ServicioRepository {
 
   // ENDPOINT DEL FRONTEND PARA CAMBIAR EL ESTADO DEL SERVICIO.
   Future<void> actualizarEstado(int id, String estado) async {
-    await _apiService.dio.put("/servicIOS/$id", data: {"estado": estado});
+    await _apiService.dio.put("/servicios/$id", data: {"estado": estado});
   }
 
   // ENDPOINT DEL FRONTEND PARA ASIGNAR UN SERVICIO A UN EMPLEADO POR LOS IDS.

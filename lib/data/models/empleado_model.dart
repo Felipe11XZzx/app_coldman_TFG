@@ -1,4 +1,5 @@
 import 'package:app_coldman_sa/data/models/servicio_model.dart';
+import 'package:flutter/material.dart';
 
 class Empleado {
 
@@ -70,9 +71,14 @@ class Empleado {
       administrador: json['administrador'] ?? false,
       bajaLaboral: json['baja_laboral'] ?? false,
       lugarNacimiento: json['lugar_nacimiento'] ?? '',
-      fechaNacimiento: json['fecha_nacimiento'] != null ? DateTime.fromMillisecondsSinceEpoch(json['fecha_nacimiento']) : DateTime.now(),
+      fechaNacimiento: json['fecha_nacimiento'] != null 
+          ? _parseDateTimeFromBackend(json['fecha_nacimiento']) 
+          : DateTime.now(),
+      fechaAlta: json['fecha_alta'] != null 
+          ? _parseDateTimeFromBackend(json['fecha_alta']) 
+          : DateTime.now(),
+          
       paisNacimiento: json['pais_nacimiento'] ?? '',
-      fechaAlta: json['fecha_alta'] != null ? DateTime.fromMillisecondsSinceEpoch(json['fecha_alta']) : DateTime.now(),
       imagenUsuario: json['imagen_usuario'] ?? '',
     );
   }
@@ -114,6 +120,21 @@ class Empleado {
       paisNacimiento: paisNacimiento ?? this.paisNacimiento,
       imagenUsuario: imagenUsuario ?? this.imagenUsuario
     );
+  }
+
+  // MÉTODO HELPER para parsear fechas
+  static DateTime _parseDateTimeFromBackend(dynamic dateValue) {
+    try {
+      if (dateValue is int) {
+        return DateTime.fromMillisecondsSinceEpoch(dateValue);
+      }
+      if (dateValue is String) {
+        return DateTime.parse(dateValue);
+      }
+    } catch (e) {
+      debugPrint('Error parsing date in Empleado: $e, value: $dateValue');
+    }
+    return DateTime.now();
   }
 
   // GETTERS DEL MODELO EMPLEADO.

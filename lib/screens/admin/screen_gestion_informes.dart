@@ -9,6 +9,7 @@ import 'package:logger/logger.dart';
 
 
 class ScreenInformes extends StatefulWidget {
+  
   const ScreenInformes({super.key});
 
   @override

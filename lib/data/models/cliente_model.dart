@@ -1,35 +1,35 @@
-class Cliente {
+import 'package:flutter/material.dart';
 
-  Cliente({
-    this.id,
-    required this.nombre,
-    required this.apellidos,
-    required this.email,
-    required this.telefono,
-    required this.trato,
-    required this.edad,
-    required this.tipoLugar,
-    required this.direccionDomicilio,
-    required this.contrasena,
-    required this.contrasena2,
-    required this.fechaAlta,
-    required this.imagenUsuario
-  });
+class Cliente {
+  Cliente(
+      {this.id,
+      required this.nombre,
+      required this.apellidos,
+      required this.email,
+      required this.telefono,
+      required this.trato,
+      required this.edad,
+      required this.tipoLugar,
+      required this.direccionDomicilio,
+      required this.contrasena,
+      required this.contrasena2,
+      required this.fechaAlta,
+      required this.imagenUsuario});
 
   factory Cliente.empty() {
     return Cliente(
-      nombre: '', 
-      apellidos: '', 
-      email: '', 
-      telefono: '', 
-      trato: '', 
-      edad: 0,
-      contrasena: '', 
-      contrasena2: '',
-      direccionDomicilio: '',
-      tipoLugar: '',
-      fechaAlta: DateTime.now(), 
-      imagenUsuario: '');
+        nombre: '',
+        apellidos: '',
+        email: '',
+        telefono: '',
+        trato: '',
+        edad: 0,
+        contrasena: '',
+        contrasena2: '',
+        direccionDomicilio: '',
+        tipoLugar: '',
+        fechaAlta: DateTime.now(),
+        imagenUsuario: '');
   }
 
   factory Cliente.fromJson(Map<String, dynamic> json) {
@@ -42,10 +42,13 @@ class Cliente {
       trato: json['trato'] ?? '',
       edad: json['edad'] ?? 0,
       contrasena: json['contrasena'] ?? '',
-      contrasena2: '', 
+      contrasena2: '',
       direccionDomicilio: json['direccion_domicilio'] ?? '',
       tipoLugar: json['tipo_lugar'] ?? '',
-      fechaAlta: json['fecha_alta'] != null ? DateTime.fromMillisecondsSinceEpoch(json['fecha_alta']) : DateTime.now(),
+      fechaAlta: json['fecha_alta'] != null
+          ? _parseDateTimeFromBackend(json['fecha_alta'])
+          : DateTime.now(),
+
       imagenUsuario: json['imagen_usuario'] ?? '',
     );
   }
@@ -81,20 +84,19 @@ class Cliente {
     String? imagenUsuario,
   }) {
     return Cliente(
-      id: id ?? this.id,
-      nombre: nombre ?? this.nombre, 
-      apellidos: apellidos ?? this.apellidos, 
-      email: email ?? this.email, 
-      telefono: telefono ?? this.telefono, 
-      trato: trato ?? this.trato, 
-      edad: edad ?? this.edad, 
-      contrasena: contrasena ?? this.contrasena, 
-      contrasena2: contrasena2 ?? this.contrasena2, 
-      direccionDomicilio: direccionDomicilio ?? this.direccionDomicilio,
-      tipoLugar: tipoLugar ?? this.tipoLugar,
-      fechaAlta: fechaAlta ?? this.fechaAlta, 
-      imagenUsuario: imagenUsuario ?? this.imagenUsuario
-    );
+        id: id ?? this.id,
+        nombre: nombre ?? this.nombre,
+        apellidos: apellidos ?? this.apellidos,
+        email: email ?? this.email,
+        telefono: telefono ?? this.telefono,
+        trato: trato ?? this.trato,
+        edad: edad ?? this.edad,
+        contrasena: contrasena ?? this.contrasena,
+        contrasena2: contrasena2 ?? this.contrasena2,
+        direccionDomicilio: direccionDomicilio ?? this.direccionDomicilio,
+        tipoLugar: tipoLugar ?? this.tipoLugar,
+        fechaAlta: fechaAlta ?? this.fechaAlta,
+        imagenUsuario: imagenUsuario ?? this.imagenUsuario);
   }
 
 // METODO PARA CONVERTIR EL OBJETO A JSON.
@@ -171,6 +173,21 @@ class Cliente {
     return json;
   }
 
+  // MÉTODO HELPER para parsear fechas
+  static DateTime _parseDateTimeFromBackend(dynamic dateValue) {
+    try {
+      if (dateValue is int) {
+        return DateTime.fromMillisecondsSinceEpoch(dateValue);
+      }
+      if (dateValue is String) {
+        return DateTime.parse(dateValue);
+      }
+    } catch (e) {
+      debugPrint('Error parsing date in Cliente: $e, value: $dateValue');
+    }
+    return DateTime.now();
+  }
+
   // GETTERS DEL MODELO CLIENTE.
   int getId() => id!;
   String getTrato() => trato;
@@ -182,5 +199,4 @@ class Cliente {
   String getApellido() => apellidos;
   DateTime getFechaAlta() => fechaAlta;
   String getTelefono() => telefono;
-  
 }

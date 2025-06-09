@@ -20,9 +20,7 @@ import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-
 class ScreenGestionClientes extends StatefulWidget {
-  
   const ScreenGestionClientes({super.key, required this.currentAdmin});
   final Empleado currentAdmin;
 
@@ -61,9 +59,12 @@ class _ScreenEstadoGestionClientes extends State<ScreenGestionClientes> {
     final emailController = TextEditingController(text: cliente.email);
     final telefonoController = TextEditingController(text: cliente.telefono);
     final passwordController = TextEditingController(text: cliente.contrasena);
-    final confirmPasswordController = TextEditingController(text: cliente.contrasena);
-    final addressLocationController = TextEditingController(text: cliente.direccionDomicilio ?? '');
-    final typePlaceController = TextEditingController(text: cliente.tipoLugar ?? '');
+    final confirmPasswordController =
+        TextEditingController(text: cliente.contrasena);
+    final addressLocationController =
+        TextEditingController(text: cliente.direccionDomicilio ?? '');
+    final typePlaceController =
+        TextEditingController(text: cliente.tipoLugar ?? '');
 
     // VARIABLES DE ESTADO INICIALIZADOS CON DATOS EXISTENTES DEL EMPLEADO QUE SE SELECCIONE AL ACTUALIZAR.
     String selectedTitle = cliente.trato;
@@ -388,7 +389,7 @@ class _ScreenEstadoGestionClientes extends State<ScreenGestionClientes> {
                               }
                             }
 
-                            // ✅ CREAR CLIENTE EDITADO
+                            // CREAR CLIENTE EDITADO
                             Cliente clienteEditado = cliente.copyWith(
                               nombre: nombreController.text.trim(),
                               apellidos: apellidosController.text.trim(),
@@ -456,8 +457,8 @@ class _ScreenEstadoGestionClientes extends State<ScreenGestionClientes> {
 
   // METODO PARA CREAR EL AVATAR DEL CLIENTE.
   Widget _buildClienteAvatar(Cliente cliente) {
-    logger.e('Construyendo avatar para cliente ${cliente.id}');
-    logger.e('imagenUsuario: "${cliente.imagenUsuario}"');
+    logger.i('Construyendo avatar para cliente ${cliente.id}');
+    logger.i('imagenUsuario: "${cliente.imagenUsuario}"');
 
     bool hasImage = cliente.imagenUsuario != null &&
         cliente.imagenUsuario.isNotEmpty &&
@@ -467,7 +468,7 @@ class _ScreenEstadoGestionClientes extends State<ScreenGestionClientes> {
     if (hasImage) {
       String imageUrl =
           'http://localhost:8080/api_coldman/v1/images/clientes/${cliente.imagenUsuario}';
-      logger.e('URL de imagen: $imageUrl');
+      logger.i('URL de imagen: $imageUrl');
 
       return CircleAvatar(
         backgroundImage: NetworkImage(imageUrl),
@@ -624,7 +625,6 @@ class _ScreenEstadoGestionClientes extends State<ScreenGestionClientes> {
         final file = result.files.first;
 
         if (kIsWeb) {
-          // ✅ Para web: usar bytes
           if (file.bytes != null) {
             logger.i(
                 'Imagen seleccionada en web: ${file.name}, bytes: ${file.bytes!.length}');
@@ -773,7 +773,13 @@ class _ScreenEstadoGestionClientes extends State<ScreenGestionClientes> {
     final clienteProvider = Provider.of<ClienteProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Gestión de Clientes"),
+        backgroundColor: Color(0xFF3B82F6),
+        foregroundColor: Colors.white,
+        title: const Text("Gestión de Clientes",
+            style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Colors.white)),
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back),

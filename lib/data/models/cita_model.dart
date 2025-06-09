@@ -49,11 +49,11 @@ class Cita {
     return Cita(
       id: json['id_cita'],
       fechaHora: json['fecha_hora'] != null
-          ? DateTime.parse(json['fecha_hora'])
+          ? _parseDateTimeFromBackend(json['fecha_hora'])
           : DateTime.now(),
       duracionEstimada: json['duracion_estimada'] ?? 0,
       comentariosAdicionales: json['comentarios_adicionales'] ?? '',
-      estadoCita: json['estado_servicio'] != null
+      estadoCita: json['estado_cita'] != null
           ? EstadoCita.fromString(json['estado_cita'])
           : EstadoCita.programado,
       idCliente: json['cliente']?['id_cliente'] ?? 0,
@@ -63,6 +63,21 @@ class Cita {
               .toList()
           : [],
     );
+  }
+
+  // MÉTODO HELPER para parsear fechas
+  static DateTime _parseDateTimeFromBackend(dynamic dateValue) {
+    try {
+      if (dateValue is int) {
+        return DateTime.fromMillisecondsSinceEpoch(dateValue);
+      }
+      if (dateValue is String) {
+        return DateTime.parse(dateValue);
+      }
+    } catch (e) {
+      debugPrint('Error parsing date in Cita: $e, value: $dateValue');
+    }
+    return DateTime.now();
   }
 
   // GETTERS DEL MODELO DE LA CITA.
@@ -98,19 +113,19 @@ class Cita {
       informes: informes ?? this.informes,
     );
   }
-  
+
   // A JSON PARA EL BACKEND
-Map<String, dynamic> toJson() {
-  return {
-    'fecha_hora': fechaHora.toIso8601String(),
-    'duracion_estimada': duracionEstimada,
-    'comentarios_adicionales': comentariosAdicionales,
-    'estado_cita': estadoCita.backendValue,
-    'id_cliente': idCliente,
-    'id_empleado': idEmpleado ?? 1,
-    'id_servicio': idServicio ?? 1,
-  };
-}
+  Map<String, dynamic> toJson() {
+    return {
+      'fecha_hora': fechaHora.toIso8601String(),
+      'duracion_estimada': duracionEstimada,
+      'comentarios_adicionales': comentariosAdicionales,
+      'estado_cita': estadoCita.backendValue,
+      'id_cliente': idCliente,
+      'id_empleado': idEmpleado ?? 1,
+      'id_servicio': idServicio ?? 1,
+    };
+  }
 
   @override
   String toString() {

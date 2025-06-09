@@ -709,7 +709,7 @@ class _ScreenEstadoGestionUsuarios extends State<ScreenGestionUsuarios> {
     int selectedAge = empleado.edad;
     bool isAdmin = empleado.administrador;
     String? imagePath = empleado.imagenUsuario;
-    Uint8List? imageBytes; // ✅ NUEVO: Para manejar bytes en web
+    Uint8List? imageBytes;
 
     // MAPA DE PAISES Y CIUDADES PARA ACTUALIZAR DATOS DEL EMPLEADO.
     final Map<String, List<String>> countryCityMap = {
@@ -1279,7 +1279,6 @@ class _ScreenEstadoGestionUsuarios extends State<ScreenGestionUsuarios> {
                         String fileName =
                             'empleado_${empleado.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-                        // ✅ USAR EL SISTEMA DE UPLOAD QUE IMPLEMENTAMOS
                         String? uploadedFileName = await imageUploadProvider
                             .uploadEmpleadoImage(imageBytes!, fileName);
 
@@ -1395,8 +1394,8 @@ class _ScreenEstadoGestionUsuarios extends State<ScreenGestionUsuarios> {
   }
 
   Widget _buildEmpleadoAvatar(Empleado empleado) {
-    logger.e('Construyendo avatar para empleado ${empleado.id}');
-    logger.e('imagenUsuario: "${empleado.imagenUsuario}"');
+    logger.i('Construyendo avatar para empleado ${empleado.id}');
+    logger.i('imagenUsuario: "${empleado.imagenUsuario}"');
 
     bool hasImage = empleado.imagenUsuario != null &&
         empleado.imagenUsuario.isNotEmpty &&
@@ -1444,7 +1443,6 @@ class _ScreenEstadoGestionUsuarios extends State<ScreenGestionUsuarios> {
         final file = result.files.first;
 
         if (kIsWeb) {
-          // ✅ Para web: usar bytes
           if (file.bytes != null) {
             logger.i(
                 'Imagen seleccionada en web: ${file.name}, bytes: ${file.bytes!.length}');
@@ -1513,11 +1511,11 @@ class _ScreenEstadoGestionUsuarios extends State<ScreenGestionUsuarios> {
       );
 
       if (image != null) {
-        logger.i('Foto tomada: ${image.path}'); // Debug
+        logger.i('Foto tomada: ${image.path}');
         onImageSelected(image.path, null);
       }
     } catch (e) {
-      logger.e('Error al tomar foto: $e'); // Debug
+      logger.e('Error al tomar foto: $e');
       _showErrorMessage('Error al tomar foto: $e');
     }
   }
@@ -1559,10 +1557,17 @@ class _ScreenEstadoGestionUsuarios extends State<ScreenGestionUsuarios> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Gestión de Usuarios"),
+        title: const Text(
+          "Gestión de Usuarios",
+          style: TextStyle(
+              fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white),
+        ),
+        backgroundColor: Color(0xFF3B82F6),
+        foregroundColor: Colors.white,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back),
+          color: Colors.white,
         ),
       ),
       body: ListView.builder(
