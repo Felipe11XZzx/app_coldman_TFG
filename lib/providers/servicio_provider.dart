@@ -72,17 +72,27 @@ class ServicioProvider with ChangeNotifier {
     }
   }
 
+
   Future<void> updateService(String serviceId, Servicio servicio) async {
-    try {
-      logger.i('Actualizando servicio ID: $serviceId');
-      await servicioRepository.updateService(serviceId, servicio);
-      await fetchServices();
-      logger.i('Servicio actualizado exitosamente');
-    } catch (e) {
-      logger.e('Error al actualizar un Servicio: $e');
-      rethrow;
+  try {
+    logger.i('Actualizando servicio ID: $serviceId');
+    
+    if (servicio.empleadoAsignado != null) {
+      await asignarEmpleadoAServicio(
+        int.parse(serviceId), 
+        servicio.empleadoAsignado!.id!
+      );
+      logger.i('Empleado asignado exitosamente');
+      return;
     }
+    
+    throw Exception('Use métodos específicos para actualizar servicios');
+    
+  } catch (e) {
+    logger.e('Error al actualizar un Servicio: $e');
+    rethrow;
   }
+}
 
   Future<void> deleteService(String serviceId) async {
     try {
@@ -466,7 +476,6 @@ Future<void> cambiarEstadoServicio(int servicioId, EstadoServicio nuevoEstado) a
   }
 }
 
-  // ✅ ELIMINACIÓN FÍSICA (HARD DELETE) - SOLO PARA ADMINISTRADORES
   Future<void> eliminarServicioFisico(int servicioId) async {
     try {
       _isLoading = true;

@@ -52,6 +52,7 @@ class ServicioRepository {
   }
 
   // ENDPOINT DEL FRONTEND PARA ACTUALIZAR UN SERVICIO.
+  /*
   Future<Servicio> updateService(String serviceId, Servicio servicio) async {
     try {
       final response = await _apiService.dio.put(
@@ -63,6 +64,7 @@ class ServicioRepository {
       throw Exception('Error al actualizar el Servicio: $e');
     }
   }
+  */
 
   // ENDPOINT DEL FRONTEND PARA ELIMINAR UN SERVICIO.
   Future<void> deleteService(String serviceId) async {

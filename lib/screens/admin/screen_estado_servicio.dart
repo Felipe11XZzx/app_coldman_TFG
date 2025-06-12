@@ -934,7 +934,7 @@ class _ScreenEstadoDetalleServicio extends State<ScreenEstadoServicios> {
     try {
       await servicioProvider.cambiarEstadoServicio(
           servicio.idServicio!, nuevoEstado);
-
+          setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Estado cambiado a: ${nuevoEstado.displayName}'),
@@ -990,10 +990,10 @@ class _ScreenEstadoDetalleServicio extends State<ScreenEstadoServicios> {
     if (confirmar == true) {
       await servicioProvider.cambiarEstadoServicio(
           servicio.idServicio!, EstadoServicio.cancelada);
-
+          setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✅ Servicio cancelado exitosamente'),
+          content: Text('Servicio cancelado exitosamente'),
           backgroundColor: Colors.green,
         ),
       );
@@ -1023,7 +1023,7 @@ class _ScreenEstadoDetalleServicio extends State<ScreenEstadoServicios> {
     if (confirmar == true) {
       await servicioProvider.cambiarEstadoServicio(
           servicio.idServicio!, EstadoServicio.completada);
-
+          setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Servicio completado exitosamente'),
@@ -1055,6 +1055,7 @@ class _ScreenEstadoDetalleServicio extends State<ScreenEstadoServicios> {
   Future<void> _programarServicio(Servicio servicio) async {
     await servicioProvider.cambiarEstadoServicio(
         servicio.idServicio!, EstadoServicio.programada);
+        setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content: Text('Servicio programado'),

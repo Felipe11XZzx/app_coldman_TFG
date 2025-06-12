@@ -226,7 +226,7 @@ class _ScreenInicioSesionEstado extends State<ScreenInicioSesion> {
     final employee = employees.firstWhere(
       (e) =>
           e.email == emailController.text &&
-          e.contrasena == passController.text,
+          e.contrasena == passController.text && _isAdmin,
       orElse: () => throw Exception('Credenciales de empleado incorrectas'),
     );
 

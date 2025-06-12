@@ -256,11 +256,11 @@ class Servicio {
       fechaFinServicio: json['fecha_fin_servicio'] != null
           ? _parseDateTimeFromBackend(json['fecha_fin_servicio'])
           : null,
-      cita: cita, // ✅ AGREGADO
-      fechaEliminacion: json['fecha_eliminacion'] != null // ✅ AGREGADO
+      cita: cita,
+      fechaEliminacion: json['fecha_eliminacion'] != null
           ? _parseDateTimeFromBackend(json['fecha_eliminacion'])
           : null,
-      motivoEliminacion: json['motivo_eliminacion'], // ✅ AGREGADO
+      motivoEliminacion: json['motivo_eliminacion'], 
     );
   }
   // A JSON PARA EL BACKEND
@@ -290,7 +290,6 @@ class Servicio {
       json['empleado_asignado'] = empleadoAsignado!.toJson();
     }
 
-    // ✅ AGREGADO: Manejar campos de eliminación
     if (fechaEliminacion != null) {
       json['fecha_eliminacion'] = fechaEliminacion!.toIso8601String();
     }
@@ -344,7 +343,6 @@ class Servicio {
       fechaInicioServicio: fechaInicioServicio ?? this.fechaInicioServicio,
       fechaFinServicio: fechaFinServicio ?? this.fechaFinServicio,
       cita: cita ?? this.cita,
-      // ✅ NUEVOS CAMPOS
       fechaEliminacion: fechaEliminacion ?? this.fechaEliminacion,
       motivoEliminacion: motivoEliminacion ?? this.motivoEliminacion,
     );
@@ -377,10 +375,10 @@ class Servicio {
   bool get esFrigorifica => categoriaServicio == CategoriaServicio.frigorificas;
   LatLng? get coordenadasLatLng => localizacionCoordenadas?.toLatLng();
   String get categoriaDisplayName => categoriaServicio.displayName;
-  bool get estaEliminado => fechaEliminacion != null; // ✅ AGREGADO
+  bool get estaEliminado => fechaEliminacion != null;
   bool get tieneCita =>
       cita !=
-      null; // ✅ AGRE  bool get tieneEmpleadoAsignado => empleadoAsignado != null;
+      null;
   String get nombreEmpleadoAsignado => empleadoAsignado != null
       ? '${empleadoAsignado!.nombre} ${empleadoAsignado!.apellidos}'
       : 'Sin asignar';
@@ -392,7 +390,7 @@ class Servicio {
   bool get estaArchivado => estadoServicio == EstadoServicio.archivado;
   bool get estaInactivo => estadoServicio == EstadoServicio.inactivo;
   bool get esVisible =>
-      estadoServicio.esActivo; // No está eliminado, archivado o inactivo
+      estadoServicio.esActivo;
   bool get puedeSerEditado => estadoServicio.esModificable;
   bool get puedeSerEliminado => !estadoServicio.esFinal;
 
@@ -472,9 +470,7 @@ Map<String, dynamic>? _parseCoordinatesFromJson(String jsonString) {
   return null;
 }
 
-// ✅ EXTENSIÓN PARA FUNCIONES DE UTILIDAD
 extension EstadoServicioExtension on EstadoServicio {
-  // Estados que se consideran "activos" (visibles por defecto)
   bool get esActivo {
     return this != EstadoServicio.eliminado &&
         this != EstadoServicio.archivado &&

@@ -182,8 +182,7 @@ class _ScreenServiciosEstado extends State<ScreenServicios> {
           Provider.of<ServicioProvider>(context, listen: false);
       final servicioActualizado =
           servicio.copyWith(estadoServicio: nuevoEstado);
-      await servicioProvider.updateService(
-          servicioActualizado.idServicio.toString(), servicioActualizado);
+      await servicioProvider.updateEstadoServicio(servicioActualizado.idServicio!, nuevoEstado.displayName);
 
       if (mounted) Navigator.of(context).pop();
 

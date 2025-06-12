@@ -58,7 +58,7 @@ class ImageUploadProvider extends ChangeNotifier {
   
   Dio get dio {
     if (_dio == null) {
-      logger.e('El DIO no se creo correctamente.');
+      logger.i('El DIO no se creo correctamente.');
       _initializeDio();
     }
     return _dio!;
@@ -71,9 +71,9 @@ class ImageUploadProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      logger.e('Subiendo imagen: $fileName a categoría: $category');
-      logger.e('Tamaño: ${imageBytes.length} bytes');
-      logger.e('URL destino: $baseUrl$imageBaseEndpoint/upload/$category');
+      logger.i('Subiendo imagen: $fileName a categoría: $category');
+      logger.i('Tamaño: ${imageBytes.length} bytes');
+      logger.i('URL destino: $baseUrl$imageBaseEndpoint/upload/$category');
       
       FormData formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(
@@ -91,7 +91,6 @@ class ImageUploadProvider extends ChangeNotifier {
           headers: {
             'Accept': 'application/json',
           },
-          // ✅ AÑADIR timeout específico para uploads
           sendTimeout: Duration(seconds: 60),
           receiveTimeout: Duration(seconds: 60),
         ),
@@ -179,7 +178,7 @@ class ImageUploadProvider extends ChangeNotifier {
       Response response = await dio.delete('$imageBaseEndpoint/$category/$imageName');
       return response.statusCode == 200;
     } on DioException catch (e) {
-      logger.e('❌ Error al eliminar: ${e.message}');
+      logger.e('Error al eliminar imagen: ${e.message}');
       return false;
     }
   }

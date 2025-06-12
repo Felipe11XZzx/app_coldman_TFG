@@ -99,25 +99,6 @@ class ApiService {
     }
   }
 
-  // ACTUALIZAR SERVICIO
-  Future<Map<String, dynamic>> actualizarServicio(int id, Map<String, dynamic> servicioData) async {
-    try {
-      logger.i('Actualizando servicio ID: $id');
-
-      final response = await _dio.put('/servicios/$id', data: servicioData);
-
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        logger.i('Servicio actualizado: ${response.data['servicio']['nombre_servicio']}');
-        return response.data;
-      } else {
-        throw Exception('Error actualizando servicio: ${response.data['message']}');
-      }
-    } on DioException catch (e) {
-      logger.e('Error actualizando servicio: ${e.message}');
-      throw Exception('Error de conexión: ${e.message}');
-    }
-  }
-
   // ELIMINAR SERVICIO
   Future<bool> eliminarServicio(int id) async {
     try {

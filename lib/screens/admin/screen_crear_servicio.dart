@@ -173,8 +173,8 @@ class _ScreenEstadoCrearServicio extends State<ScreenCrearServicio> {
 
                   final servicioProvider =
                       Provider.of<ServicioProvider>(context, listen: false);
-                  servicioProvider.updateService(
-                      servicio.idServicio.toString(), servicioEditado);
+                  servicioProvider.asignarEmpleadoAServicio(
+                      servicio.idServicio!, servicio.empleadoAsignado!.id!);
 
                   Navigator.pop(dialogContext);
                   setState(() {});

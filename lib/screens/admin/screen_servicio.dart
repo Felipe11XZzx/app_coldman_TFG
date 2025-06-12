@@ -8,7 +8,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 
-
 class Empleado {
   final int id;
   final String nombre;
@@ -203,7 +202,6 @@ class ScreenPruebaServicio extends StatefulWidget {
 }
 
 class _ScreenEstadoPruebaServicio extends State<ScreenPruebaServicio> {
-
   bool _cargandoUbicacion = false;
   final TextEditingController _comentariosController = TextEditingController();
   final TextEditingController _direccionController = TextEditingController();
@@ -460,8 +458,7 @@ class _ScreenEstadoPruebaServicio extends State<ScreenPruebaServicio> {
   }
 
   double _calcularDistancia(LatLng punto1, LatLng punto2) {
-    double deltaLat =
-        (punto2.latitude - punto1.latitude) * 111.32; 
+    double deltaLat = (punto2.latitude - punto1.latitude) * 111.32;
     double deltaLng = (punto2.longitude - punto1.longitude) *
         111.32 *
         (math.cos(punto1.latitude * math.pi / 180));
@@ -609,8 +606,7 @@ class _ScreenEstadoPruebaServicio extends State<ScreenPruebaServicio> {
     List<String> aproximaciones = [];
     String direccion = direccionOriginal.toLowerCase().trim();
 
-    debugPrint(
-        'Generando aproximaciones progresivas para: $direccionOriginal');
+    debugPrint('Generando aproximaciones progresivas para: $direccionOriginal');
 
     String sinPisos = _quitarSoloPisos(direccionOriginal);
     if (sinPisos != direccionOriginal) {
@@ -1162,33 +1158,35 @@ class _ScreenEstadoPruebaServicio extends State<ScreenPruebaServicio> {
       String comentariosActualizados =
           _construirComentariosActualizados(direccionCompleta);
 
-      final coordenadasCorrectas = _ubicacionSeleccionada != null
-          ? {
-              'lat': _ubicacionSeleccionada!.latitude,
-              'lng': _ubicacionSeleccionada!.longitude,
-            }
-          : null;
-
-      final servicioActualizado = _servicioActual!.copyWith(
-        empleadoAsignado: _empleadoAsignado?.id,
-        localizacionCoordenada: coordenadasCorrectas,
-        descripcionServicio: comentariosActualizados,
-        estadoServicio: 'PROGRESANDO',
-      );
-
-      final Map<String, dynamic> datosActualizados =
-          servicioActualizado.toJson();
-
-      final response = await _dio.put('/servicios/${widget.servicioId}',
-          data: datosActualizados);
-
-      if (response.statusCode == 200) {
-        _mostrarMensajeExito('Servicio asignado correctamente');
-        Navigator.pop(context, true);
-      } else {
-        _mostrarMensajeError('Error al actualizar el servicio');
+      if (_empleadoAsignado?.id != null) {
+        await _dio.put(
+            '/servicios/${widget.servicioId}/asignar-empleado/${_empleadoAsignado!.id}');
+        logger.i('Empleado asignado');
       }
+
+      await _dio.put('/servicios/${widget.servicioId}/estado',
+          data: {'estado': 'PROGRESANDO'});
+      logger.i('Estado cambiado');
+
+      if (_ubicacionSeleccionada != null) {
+        final coordenadasData = {
+          'lat': _ubicacionSeleccionada!.latitude,
+          'lng': _ubicacionSeleccionada!.longitude,
+        };
+
+        logger.i('Enviando coordenadas: $coordenadasData');
+
+        final coordResponse = await _dio.put(
+            '/servicios/${widget.servicioId}/coordenadas',
+            data: coordenadasData);
+
+        logger.i('Coordenadas guardadas: ${coordResponse.data}');
+      }
+
+      _mostrarMensajeExito('Servicio actualizado correctamente');
+      Navigator.pop(context, true);
     } catch (e) {
+      logger.e('Error actualizando servicio: $e');
       _mostrarMensajeError('Error de conexión: $e');
     } finally {
       setState(() {
@@ -1495,8 +1493,8 @@ class _ScreenEstadoPruebaServicio extends State<ScreenPruebaServicio> {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: Colors.grey[300]!),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -2224,7 +2222,11 @@ class _ScreenEstadoPruebaServicio extends State<ScreenPruebaServicio> {
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.assignment_turned_in, size: 24, color: Colors.white,),
+                    Icon(
+                      Icons.assignment_turned_in,
+                      size: 24,
+                      color: Colors.white,
+                    ),
                     SizedBox(width: 8),
                     Text(
                       'Confirmar Asignación de Servicio',

@@ -6,10 +6,7 @@ import 'package:app_coldman_sa/providers/cita_provider.dart';
 import 'package:app_coldman_sa/providers/servicio_provider.dart';
 import 'package:logger/logger.dart';
 
-
 class ServicioCitaProvider with ChangeNotifier {
-  
-  
   final CitaProvider _citaProvider;
   final ServicioProvider _servicioProvider;
   final Logger logger = Logger();
@@ -35,24 +32,23 @@ class ServicioCitaProvider with ChangeNotifier {
     _clearError();
 
     try {
-      logger.i('Iniciando creación de cita con servicio para cliente: ${cliente.nombre}');
+      logger.i(
+          'Iniciando creación de cita con servicio para cliente: ${cliente.nombre}');
 
       final nuevaCita = Cita(
         fechaHora: fechaHora,
         duracionEstimada: duracionEstimada,
         comentariosAdicionales: _construirComentariosCompletos(
-          direccionServicio, 
-          tipoLugar, 
-          comentariosAdicionales
-        ),
+            direccionServicio, tipoLugar, comentariosAdicionales),
         estadoCita: EstadoCita.programado,
         idCliente: cliente.getId(),
-        idEmpleado: null, 
+        idEmpleado: null,
         idServicio: null,
       );
 
       await _citaProvider.citasRepository.agregarCita(nuevaCita);
-      final citasCliente = await _citaProvider.citasRepository.getCitasPorCliente(cliente.getId());
+      final citasCliente = await _citaProvider.citasRepository
+          .getCitasPorCliente(cliente.getId());
       final citaCreada = citasCliente.last;
 
       logger.i('Cita creada con ID: ${citaCreada.id}');
@@ -60,10 +56,7 @@ class ServicioCitaProvider with ChangeNotifier {
       final nuevoServicio = Servicio(
         nombre: _generarNombreServicio(categoriaServicio, cliente),
         descripcion: _generarDescripcionServicio(
-          categoriaServicio, 
-          direccionServicio, 
-          comentariosAdicionales
-        ),
+            categoriaServicio, direccionServicio, comentariosAdicionales),
         categoriaServicio: categoriaServicio,
         estadoServicio: EstadoServicio.programada,
         fechaCreacion: DateTime.now(),
@@ -75,17 +68,16 @@ class ServicioCitaProvider with ChangeNotifier {
       );
 
       await _servicioProvider.addService(nuevoServicio);
-      final serviciosRecientes = await _servicioProvider.servicioRepository.getListaServicios();
+      final serviciosRecientes =
+          await _servicioProvider.servicioRepository.getListaServicios();
       final servicioCreado = serviciosRecientes.last;
 
       final citaActualizada = citaCreada.copyWith(
         idServicio: servicioCreado.idServicio,
       );
 
-      await _citaProvider.citasRepository.actualizarCita(
-        citaCreada.id.toString(), 
-        citaActualizada
-      );
+      await _citaProvider.citasRepository
+          .actualizarCita(citaCreada.id.toString(), citaActualizada);
 
       logger.i('Servicio creado con ID: ${servicioCreado.idServicio}');
       logger.i('Cita-Servicio vinculados correctamente');
@@ -101,12 +93,11 @@ class ServicioCitaProvider with ChangeNotifier {
         'servicio': servicioCreado,
         'message': 'Cita y servicio creados exitosamente'
       };
-
     } catch (e) {
       _setError('Error al crear cita con servicio: $e');
       _setLoading(false);
       logger.e('Error en crearCitaConServicio: $e');
-      
+
       return {
         'success': false,
         'error': e.toString(),
@@ -115,20 +106,22 @@ class ServicioCitaProvider with ChangeNotifier {
     }
   }
 
-  Future<List<Map<String, dynamic>>> obtenerServiciosConCitasCliente(int clienteId) async {
+  Future<List<Map<String, dynamic>>> obtenerServiciosConCitasCliente(
+      int clienteId) async {
     try {
-      final citas = await _citaProvider.citasRepository.getCitasPorCliente(clienteId);
+      final citas =
+          await _citaProvider.citasRepository.getCitasPorCliente(clienteId);
       final servicios = _servicioProvider.todosMenosEliminados;
-      
+
       List<Map<String, dynamic>> serviciosConCitas = [];
-      
+
       for (final cita in citas) {
         if (cita.idServicio != null) {
           final servicio = servicios.firstWhere(
             (s) => s.idServicio == cita.idServicio,
             orElse: () => Servicio.empty(),
           );
-          
+
           if (servicio.idServicio != null) {
             serviciosConCitas.add({
               'cita': cita,
@@ -137,7 +130,7 @@ class ServicioCitaProvider with ChangeNotifier {
           }
         }
       }
-      
+
       return serviciosConCitas;
     } catch (e) {
       logger.e('Error obteniendo servicios con citas: $e');
@@ -145,54 +138,46 @@ class ServicioCitaProvider with ChangeNotifier {
     }
   }
 
-Future<bool> actualizarEstadosCitaServicio({
-  required int citaId,
-  required int servicioId,
-  required EstadoCita nuevoEstadoCita,
-  required EstadoServicio nuevoEstadoServicio,
-  String? motivo,
-}) async {
-  try {
-    _setLoading(true);
+  Future<bool> actualizarEstadosCitaServicio({
+    required int citaId,
+    required int servicioId,
+    required EstadoCita nuevoEstadoCita,
+    required EstadoServicio nuevoEstadoServicio,
+    String? motivo,
+  }) async {
+    try {
+      _setLoading(true);
 
-    final citaActual = await _citaProvider.citasRepository.getListaCitas();
-    final cita = citaActual.firstWhere((c) => c.id == citaId);
-    
-    final citaActualizada = cita.copyWith(estadoCita: nuevoEstadoCita);
-    await _citaProvider.citasRepository.actualizarCita(
-      citaId.toString(), 
-      citaActualizada
-    );
+      final citaActual = await _citaProvider.citasRepository.getListaCitas();
+      final cita = citaActual.firstWhere((c) => c.id == citaId);
 
-    bool servicioActualizadoExitoso = false;
-    
-    if (nuevoEstadoServicio == EstadoServicio.cancelada) {
-      await _servicioProvider.cambiarEstadoServicio(servicioId, EstadoServicio.cancelada);
-    } else {
-      final servicios = _servicioProvider.todosMenosEliminados;
-      final servicio = servicios.firstWhere((s) => s.idServicio == servicioId);
-      final servicioActualizadoObj = servicio.copyWith(estadoServicio: nuevoEstadoServicio);
-      
-      await _servicioProvider.updateService(
-        servicioId.toString(), 
-        servicioActualizadoObj 
-      );
-      servicioActualizadoExitoso = true; 
+      final citaActualizada = cita.copyWith(estadoCita: nuevoEstadoCita);
+      await _citaProvider.citasRepository
+          .actualizarCita(citaId.toString(), citaActualizada);
+
+      bool servicioActualizadoExitoso = false;
+
+      if (nuevoEstadoServicio == EstadoServicio.cancelada) {
+        await _servicioProvider.cambiarEstadoServicio(
+            servicioId, EstadoServicio.cancelada);
+      } else {
+        await _servicioProvider.cambiarEstadoServicio(
+            servicioId, nuevoEstadoServicio);
+        servicioActualizadoExitoso = true;
+      }
+
+      await _citaProvider.cargarCitas();
+      await _servicioProvider.fetchServices();
+
+      _setLoading(false);
+      return servicioActualizadoExitoso;
+    } catch (e) {
+      logger.e('Error actualizando estados: $e');
+      _setError('Error al actualizar estados: $e');
+      _setLoading(false);
+      return false;
     }
-
-    await _citaProvider.cargarCitas();
-    await _servicioProvider.fetchServices();
-
-    _setLoading(false);
-    return servicioActualizadoExitoso;
-
-  } catch (e) {
-    logger.e('Error actualizando estados: $e');
-    _setError('Error al actualizar estados: $e');
-    _setLoading(false);
-    return false;
   }
-}
 
   String _generarNombreServicio(CategoriaServicio categoria, Cliente cliente) {
     final nombreCategoria = categoria.displayName;
@@ -201,30 +186,24 @@ Future<bool> actualizarEstadosCitaServicio({
   }
 
   String _generarDescripcionServicio(
-    CategoriaServicio categoria, 
-    String direccion, 
-    String comentarios
-  ) {
-    final descripcionBase = 'Servicio de ${categoria.displayName} solicitado por cliente.';
+      CategoriaServicio categoria, String direccion, String comentarios) {
+    final descripcionBase =
+        'Servicio de ${categoria.displayName} solicitado por cliente.';
     final ubicacion = 'Ubicación: $direccion';
-    final observaciones = comentarios.isNotEmpty 
-        ? 'Observaciones: $comentarios' 
+    final observaciones = comentarios.isNotEmpty
+        ? 'Observaciones: $comentarios'
         : 'Sin observaciones adicionales.';
-    
+
     return '$descripcionBase\n$ubicacion\n$observaciones';
   }
 
   String _construirComentariosCompletos(
-    String direccion, 
-    String tipoLugar, 
-    String comentarios
-  ) {
+      String direccion, String tipoLugar, String comentarios) {
     final ubicacionCompleta = 'Dirección: $direccion ($tipoLugar)';
-    final observaciones = comentarios.isNotEmpty 
-        ? 'Comentarios adicionales: $comentarios' 
-        : '';
-    
-    return observaciones.isNotEmpty 
+    final observaciones =
+        comentarios.isNotEmpty ? 'Comentarios adicionales: $comentarios' : '';
+
+    return observaciones.isNotEmpty
         ? '$ubicacionCompleta\n$observaciones'
         : ubicacionCompleta;
   }
