@@ -1,3 +1,11 @@
-# app_coldman_sa
+# Frontend App Coldman S.A.
 
-A new Flutter project.
+lib/
+├── data/
+│   ├── models/       # Modelos de datos
+│   ├── repositories/ # Comunicación con APIs
+│   └── providers/    # Gestión de estado
+├── presentation/
+│   ├── screens/      # Pantallas principales
+│   └── widgets/      # Componentes reutilizables
+└── utils/           # Utilidades y helpers
